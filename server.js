@@ -9,7 +9,7 @@ const { spawn } = require('node:child_process')
 const ROOT_DIR = path.resolve(__dirname)
 const PORT = Number(process.env.PORT || '8099')
 
-const DB_PATH = path.join(ROOT_DIR, 'magic-music-db.json')
+const DB_PATH = path.resolve(process.env.DB_PATH || path.join(ROOT_DIR, 'magic-music-db.json'))
 const sessions = new Map()
 const adminSessions = new Map()
 const captchaStore = new Map()
@@ -22,6 +22,9 @@ const KUGOU_UPSTREAMS = [
   { hostname: '127.0.0.1', port: 3102, stripPrefix: '/kugou' },
   { hostname: '127.0.0.1', port: 3001, stripPrefix: '/kugou' },
 ]
+
+const NETEASE_HOST = String(process.env.NETEASE_HOST || '127.0.0.1')
+const NETEASE_PORT = Number(process.env.NETEASE_PORT || '3002')
 
 const DEFAULT_ADMIN_USERNAME = 'admin'
 const DEFAULT_ADMIN_PASSWORD = 'admin123456'
@@ -1577,7 +1580,7 @@ http
     }
 
     if (req.url.startsWith('/netease')) {
-      proxyRequest(req, res, { hostname: '127.0.0.1', port: 3002, stripPrefix: '/netease' })
+      proxyRequest(req, res, { hostname: NETEASE_HOST, port: NETEASE_PORT, stripPrefix: '/netease' })
       return
     }
 

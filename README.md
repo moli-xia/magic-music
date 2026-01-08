@@ -70,7 +70,53 @@ PORT=3002 node app.js
 
 运行过程中会在项目根目录生成/使用 `magic-music-db.json` 作为本地数据存储（用户、歌单、收藏、后台账号信息等）。
 
+## Docker 快速部署
+
+### 方式一：Docker Compose（推荐）
+
+在项目根目录执行：
+
+```bash
+docker compose up -d --build
+```
+
+访问：
+
+- Web：`http://localhost:8099`
+
+数据持久化：
+
+- 默认把数据写入容器内的 `/data/magic-music-db.json`（通过 `DB_PATH` 配置）
+- compose 已创建具名卷 `magic-music-data` 用于持久化
+
+### 方式二：Docker Run
+
+```bash
+docker build -t superneed/magic-music:latest .
+docker run -d \
+  --name magic-music \
+  -p 8099:8099 \
+  -e DB_PATH=/data/magic-music-db.json \
+  -v magic-music-data:/data \
+  --restart unless-stopped \
+  superneed/magic-music:latest
+```
+
+### 环境变量
+
+- `PORT`：主服务端口，默认 `8099`
+- `DB_PATH`：数据文件路径，默认 `./magic-music-db.json`
+- `NETEASE_HOST`：网易云 API 目标地址，默认 `127.0.0.1`
+- `NETEASE_PORT`：网易云 API 目标端口，默认 `3002`
+
+## 推送镜像到 Docker Hub（superneed/magic-music）
+
+```bash
+docker build -t superneed/magic-music:latest .
+docker login -u superneed
+docker push superneed/magic-music:latest
+```
+
 ## 部署建议
 
 生产环境建议使用进程守护（如 systemd、pm2 等）启动 `node server.js`，并通过反向代理（Nginx/Caddy）提供 HTTPS 访问。
-

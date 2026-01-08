@@ -1,0 +1,19 @@
+services:
+  magic-music:
+    image: superneed/magic-music:latest
+    build:
+      context: .
+    ports:
+      - "8099:8099"
+    environment:
+      PORT: "8099"
+      NETEASE_HOST: "127.0.0.1"
+      NETEASE_PORT: "3002"
+      DB_PATH: "/data/magic-music-db.json"
+    volumes:
+      - magic-music-data:/data
+    restart: unless-stopped
+
+volumes:
+  magic-music-data:
+
