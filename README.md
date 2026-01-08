@@ -22,9 +22,35 @@ magic-music/
       NeteaseCloudMusicApi/ # 网易云 API（需单独启动在 3002）
 ```
 
-## 快速开始（本地）
+## 快速开始
 
-### 1) 启动主服务
+### 推荐：Docker 快速部署
+
+使用你已发布到 Docker Hub 的镜像（推荐）：
+
+```bash
+docker compose pull
+docker compose up -d --no-build
+```
+
+访问：
+
+- Web：`http://localhost:8099`
+
+数据持久化：
+
+- 默认把数据写入容器内的 `/data/magic-music-db.json`（通过 `DB_PATH` 配置）
+- compose 已创建具名卷 `magic-music-data` 用于持久化
+
+如需本地构建镜像（不依赖 Docker Hub）：
+
+```bash
+docker compose up -d --build
+```
+
+### 本地运行（Node.js）
+
+#### 1) 启动主服务
 
 确保安装 Node.js（建议 18+），然后在项目根目录执行：
 
@@ -37,7 +63,7 @@ node server.js
 - Web：`http://localhost:8099`
 - 端口可通过环境变量覆盖：`PORT=8099 node server.js`
 
-### 2) 安装并启用酷狗 API（按需）
+#### 2) 安装并启用酷狗 API（按需）
 
 主服务会在访问 `/kugou/*` 时尝试连接本地已存在的酷狗 API 端口；如果未发现可用服务，会尝试从 `magic-music/KuGouMusicApi/app.js` 拉起一个子进程。
 
@@ -48,7 +74,7 @@ cd magic-music/KuGouMusicApi
 npm install
 ```
 
-### 3) 启用网易云 API（可选）
+#### 3) 启用网易云 API（可选）
 
 主服务会把 `/netease/*` 代理到 `127.0.0.1:3002`。如需使用网易云相关能力，请单独启动：
 
@@ -70,26 +96,7 @@ PORT=3002 node app.js
 
 运行过程中会在项目根目录生成/使用 `magic-music-db.json` 作为本地数据存储（用户、歌单、收藏、后台账号信息等）。
 
-## Docker 快速部署
-
-### 方式一：Docker Compose（推荐）
-
-在项目根目录执行：
-
-```bash
-docker compose up -d --build
-```
-
-访问：
-
-- Web：`http://localhost:8099`
-
-数据持久化：
-
-- 默认把数据写入容器内的 `/data/magic-music-db.json`（通过 `DB_PATH` 配置）
-- compose 已创建具名卷 `magic-music-data` 用于持久化
-
-### 方式二：Docker Run
+## Docker Run
 
 ```bash
 docker build -t superneed/magic-music:latest .
