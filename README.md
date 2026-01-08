@@ -24,9 +24,9 @@ magic-music/
 
 ## 快速开始
 
-### 推荐：Docker 快速部署
+### 推荐：Docker Hub 一键部署
 
-使用 Docker Hub 的镜像（推荐）：
+使用 Docker Hub 镜像一键启动（推荐）：
 
 ```bash
 docker pull superneed/magic-music:latest
@@ -37,20 +37,22 @@ docker run -d --name magic-music --restart unless-stopped -p 8099:8099 superneed
 
 - Web：`http://localhost:8099`
 
-数据持久化：
-
-- 默认把数据写入容器内的 `/data/magic-music-db.json`（通过 `DB_PATH` 配置）
-- 如需持久化，建议挂载数据卷到 `/data`：
+如需数据持久化（建议）：
 
 ```bash
-docker volume create magic-music-data
-docker run -d --name magic-music --restart unless-stopped -p 8099:8099 -v magic-music-data:/data superneed/magic-music:latest
+docker rm -f magic-music
+docker run -d --name magic-music --restart unless-stopped \
+  -p 8099:8099 \
+  -e DB_PATH=/data/magic-music-db.json \
+  -v magic-music-data:/data \
+  superneed/magic-music:latest
 ```
 
-如需本地构建镜像（不依赖 Docker Hub）：
+可选：Docker Compose（从 Docker Hub 拉取镜像）：
 
 ```bash
-docker compose up -d --build
+docker compose pull
+docker compose up -d --no-build
 ```
 
 ### 本地运行（Node.js）
@@ -101,7 +103,7 @@ PORT=3002 node app.js
 
 运行过程中会在项目根目录生成/使用 `magic-music-db.json` 作为本地数据存储（用户、歌单、收藏、后台账号信息等）。
 
-## Docker（本地构建运行）
+## 从源码构建镜像（可选）
 
 ```bash
 docker build -t superneed/magic-music:latest .
