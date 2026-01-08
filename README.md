@@ -29,8 +29,14 @@ magic-music/
 使用 Docker Hub 镜像 `superneed/magic-music`（推荐，无需本地构建）：
 
 ```bash
-docker compose pull
-docker compose up -d --no-build
+docker pull superneed/magic-music:latest
+docker volume create magic-music-data
+docker run -d \
+  --name magic-music \
+  -p 8099:8099 \
+  -v magic-music-data:/data \
+  --restart unless-stopped \
+  superneed/magic-music:latest
 ```
 
 访问：
@@ -40,9 +46,9 @@ docker compose up -d --no-build
 数据持久化：
 
 - 默认把数据写入容器内的 `/data/magic-music-db.json`（通过 `DB_PATH` 配置）
-- compose 已创建具名卷 `magic-music-data` 用于持久化
+- 使用具名卷 `magic-music-data` 用于持久化
 
-如需本地构建镜像（不依赖 Docker Hub）：
+如需本地构建镜像（不依赖 Docker Hub，在项目根目录执行）：
 
 ```bash
 docker compose up -d --build
