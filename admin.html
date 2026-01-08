@@ -1,0 +1,896 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Magic Music 管理后台</title>
+    <style>
+      :root { color-scheme: light dark; }
+      body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "PingFang SC", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif; margin: 0; padding: 24px; }
+      .wrap { max-width: 960px; margin: 0 auto; }
+      .card { border: 1px solid rgba(127,127,127,.25); border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+      .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+      label { display: block; font-size: 14px; margin-bottom: 6px; opacity: .9; }
+      input { width: 260px; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(127,127,127,.35); background: transparent; }
+      button { padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(127,127,127,.35); background: rgba(127,127,127,.12); cursor: pointer; }
+      button:disabled { opacity: .6; cursor: not-allowed; }
+      .muted { opacity: .75; }
+      .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+      .danger { color: #d33; }
+      .ok { color: #1a7f37; }
+      img.qr { width: 220px; height: 220px; border-radius: 12px; border: 1px solid rgba(127,127,127,.25); background: #fff; }
+      .hidden { display: none; }
+      table { width: 100%; border-collapse: collapse; }
+      th, td { padding: 10px 8px; border-top: 1px solid rgba(127,127,127,.25); text-align: left; font-size: 14px; }
+      th { opacity: .9; font-weight: 600; }
+      .pill { display: inline-block; padding: 4px 8px; border-radius: 999px; border: 1px solid rgba(127,127,127,.35); background: rgba(127,127,127,.08); font-size: 12px; }
+      .wfull { width: 100%; }
+      select { width: 260px; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(127,127,127,.35); background: transparent; }
+      .list { display: grid; gap: 8px; }
+      .item { border: 1px solid rgba(127,127,127,.25); border-radius: 12px; padding: 12px; }
+      .itemRow { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; justify-content: space-between; }
+      .thumb { width: 180px; height: 80px; object-fit: cover; border-radius: 10px; border: 1px solid rgba(127,127,127,.25); background: rgba(127,127,127,.08); }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>Magic Music 管理后台</h1>
+
+      <div id="loginCard" class="card hidden">
+        <h2>管理员登录</h2>
+        <div class="row">
+          <div>
+            <label for="username">用户名</label>
+            <input id="username" autocomplete="username" />
+          </div>
+          <div>
+            <label for="password">密码</label>
+            <input id="password" type="password" autocomplete="current-password" />
+          </div>
+          <div style="align-self: end;">
+            <button id="loginBtn">登录</button>
+          </div>
+        </div>
+        <p id="loginMsg" class="muted"></p>
+        <p class="muted">默认账号：admin 默认密码：admin123456（首次登录后请修改）。</p>
+      </div>
+
+      <div id="mainCard" class="card hidden">
+        <div class="row" style="justify-content: space-between;">
+          <div>
+            <div class="muted">当前管理员</div>
+            <div id="adminName" class="mono"></div>
+          </div>
+          <div class="row">
+            <button id="logoutBtn">退出登录</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="kugouCard" class="card hidden">
+        <h2>酷狗扫码登录</h2>
+        <div class="row">
+          <button id="startQrBtn">生成二维码</button>
+          <button id="stopPollBtn" disabled>停止轮询</button>
+          <button id="clearAuthBtn">清除已保存登录</button>
+        </div>
+        <div class="row" style="margin-top: 12px;">
+          <img id="qrImg" class="qr hidden" alt="二维码" />
+          <div style="min-width: 260px;">
+            <div class="muted">二维码 Key</div>
+            <div id="qrKey" class="mono"></div>
+            <div style="height: 10px;"></div>
+            <div class="muted">扫码状态</div>
+            <div id="qrStatus" class="mono"></div>
+            <div style="height: 10px;"></div>
+            <div class="muted">已保存酷狗登录</div>
+            <div id="authStatus" class="mono"></div>
+          </div>
+        </div>
+        <p id="kugouMsg" class="muted"></p>
+      </div>
+
+      <div id="passwordCard" class="card hidden">
+        <h2>修改管理员密码</h2>
+        <div class="row">
+          <div>
+            <label for="oldPassword">旧密码</label>
+            <input id="oldPassword" type="password" autocomplete="current-password" />
+          </div>
+          <div>
+            <label for="newPassword">新密码</label>
+            <input id="newPassword" type="password" autocomplete="new-password" />
+          </div>
+          <div>
+            <label for="newPassword2">确认新密码</label>
+            <input id="newPassword2" type="password" autocomplete="new-password" />
+          </div>
+          <div style="align-self: end;">
+            <button id="changePasswordBtn">修改密码</button>
+          </div>
+        </div>
+        <p id="passwordMsg" class="muted"></p>
+      </div>
+
+      <div id="usersCard" class="card hidden">
+        <h2>注册用户管理</h2>
+        <div class="row">
+          <button id="refreshUsersBtn">刷新列表</button>
+        </div>
+        <div style="height: 10px;"></div>
+        <div class="muted">用户数：<span id="usersCount" class="mono"></span></div>
+        <div style="height: 10px;"></div>
+        <div style="overflow:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>用户名</th>
+                <th>创建时间</th>
+                <th>歌单</th>
+                <th>喜欢</th>
+                <th>下载</th>
+                <th>最近</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="usersTbody"></tbody>
+          </table>
+        </div>
+        <p id="usersMsg" class="muted"></p>
+      </div>
+
+      <div id="homeCard" class="card hidden">
+        <h2>首页幻灯片管理</h2>
+
+        <div class="item">
+          <div class="itemRow">
+            <div>
+              <div class="muted">首页歌单</div>
+              <div class="mono">用于绑定幻灯片点击播放</div>
+            </div>
+            <div class="row">
+              <button id="refreshHomePlaylistsBtn">刷新</button>
+            </div>
+          </div>
+          <div style="height: 10px;"></div>
+          <div class="row">
+            <div>
+              <label for="homePlaylistName">新建歌单名称</label>
+              <input id="homePlaylistName" />
+            </div>
+            <div style="align-self:end;">
+              <button id="createHomePlaylistBtn">新建歌单</button>
+            </div>
+          </div>
+          <div style="height: 10px;"></div>
+          <div class="row">
+            <div>
+              <label for="homePlaylistSelect">当前编辑歌单</label>
+              <select id="homePlaylistSelect"></select>
+            </div>
+            <div style="align-self:end;">
+              <button id="deleteHomePlaylistBtn" class="danger">删除当前歌单</button>
+            </div>
+            <div class="muted">曲目数：<span id="homePlaylistTracksCount" class="mono"></span></div>
+          </div>
+          <p id="homePlaylistsMsg" class="muted"></p>
+        </div>
+
+        <div class="item">
+          <div class="itemRow">
+            <div>
+              <div class="muted">搜索并添加歌曲</div>
+              <div class="mono">结果可加入当前编辑歌单</div>
+            </div>
+          </div>
+          <div style="height: 10px;"></div>
+          <div class="row">
+            <div>
+              <label for="homeSearchKeywords">关键词</label>
+              <input id="homeSearchKeywords" />
+            </div>
+            <div style="align-self:end;">
+              <button id="homeSearchBtn">搜索</button>
+            </div>
+          </div>
+          <div style="height: 10px;"></div>
+          <div id="homeSearchResults" class="list"></div>
+          <p id="homeSearchMsg" class="muted"></p>
+        </div>
+
+        <div class="item">
+          <div class="itemRow">
+            <div>
+              <div class="muted">当前歌单曲目</div>
+              <div class="mono">可移除</div>
+            </div>
+            <div class="row">
+              <button id="refreshHomePlaylistTracksBtn">刷新曲目</button>
+            </div>
+          </div>
+          <div style="height: 10px;"></div>
+          <div id="homePlaylistTracks" class="list"></div>
+          <p id="homePlaylistTracksMsg" class="muted"></p>
+        </div>
+
+        <div class="item">
+          <div class="itemRow">
+            <div>
+              <div class="muted">新增幻灯片</div>
+              <div class="mono">可填图片链接或上传图片</div>
+            </div>
+            <div class="row">
+              <button id="refreshSlidesBtn">刷新幻灯片</button>
+            </div>
+          </div>
+          <div style="height: 10px;"></div>
+          <div class="row">
+            <div>
+              <label for="slideImageUrl">图片链接</label>
+              <input id="slideImageUrl" class="wfull" placeholder="https://..." />
+            </div>
+            <div>
+              <label for="slideImageFile">上传图片</label>
+              <input id="slideImageFile" type="file" accept="image/*" />
+            </div>
+            <div style="align-self:end;">
+              <button id="addSlideBtn">添加幻灯片</button>
+            </div>
+          </div>
+          <p id="slidesMsg" class="muted"></p>
+          <div style="height: 10px;"></div>
+          <div id="slidesList" class="list"></div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const $ = (id) => document.getElementById(id)
+      const state = { pollTimer: null, key: '' }
+
+      async function api(path, opts) {
+        const res = await fetch(path, { credentials: 'include', headers: { 'Content-Type': 'application/json' }, ...opts })
+        const text = await res.text()
+        let data = null
+        try { data = JSON.parse(text) } catch { data = { raw: text } }
+        if (!res.ok) {
+          const msg = data && data.error ? data.error : `HTTP ${res.status}`
+          const err = new Error(msg)
+          err.data = data
+          err.status = res.status
+          throw err
+        }
+        return data
+      }
+
+      function setVisible(el, on) {
+        if (!el) return
+        el.classList.toggle('hidden', !on)
+      }
+
+      function statusText(code) {
+        if (code === 0) return '0 (已过期)'
+        if (code === 1) return '1 (等待扫码)'
+        if (code === 2) return '2 (待确认)'
+        if (code === 4) return '4 (登录成功)'
+        if (code === -1) return '未知'
+        return String(code)
+      }
+
+      async function refreshMe() {
+        const me = await api('/api/admin/me', { method: 'GET' })
+        if (me.admin) {
+          $('adminName').textContent = me.admin.username || ''
+          setVisible($('loginCard'), false)
+          setVisible($('mainCard'), true)
+          setVisible($('kugouCard'), true)
+          setVisible($('passwordCard'), true)
+          setVisible($('usersCard'), true)
+          setVisible($('homeCard'), true)
+          await refreshAuth()
+          await refreshUsers().catch(() => {})
+          await refreshHomePlaylists().catch(() => {})
+          await refreshSlides().catch(() => {})
+        } else {
+          setVisible($('loginCard'), true)
+          setVisible($('mainCard'), false)
+          setVisible($('kugouCard'), false)
+          setVisible($('passwordCard'), false)
+          setVisible($('usersCard'), false)
+          setVisible($('homeCard'), false)
+        }
+      }
+
+      async function refreshAuth() {
+        const r = await api('/api/admin/kugou/auth', { method: 'GET' })
+        if (!r.auth) {
+          $('authStatus').textContent = '无'
+          return
+        }
+        $('authStatus').textContent = `userid=${r.auth.userid} token=${r.auth.token} vip_type=${r.auth.vip_type} updatedAt=${r.auth.updatedAt}`
+      }
+
+      function stopPolling() {
+        if (state.pollTimer) clearInterval(state.pollTimer)
+        state.pollTimer = null
+        $('stopPollBtn').disabled = true
+      }
+
+      function formatDate(value) {
+        const raw = String(value || '')
+        if (!raw) return ''
+        const d = new Date(raw)
+        if (!Number.isFinite(d.getTime())) return raw
+        const pad = (n) => String(n).padStart(2, '0')
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+      }
+
+      async function refreshUsers() {
+        $('usersMsg').textContent = ''
+        const r = await api('/api/admin/users', { method: 'GET' })
+        const list = Array.isArray(r.users) ? r.users : []
+        $('usersCount').textContent = String(list.length)
+        const tbody = $('usersTbody')
+        tbody.innerHTML = ''
+
+        list.forEach((u) => {
+          const tr = document.createElement('tr')
+
+          const tdId = document.createElement('td')
+          tdId.className = 'mono'
+          tdId.textContent = String(u.id || '')
+          tr.appendChild(tdId)
+
+          const tdName = document.createElement('td')
+          tdName.textContent = String(u.username || '')
+          tr.appendChild(tdName)
+
+          const tdCreated = document.createElement('td')
+          tdCreated.textContent = formatDate(u.createdAt)
+          tr.appendChild(tdCreated)
+
+          const tdP = document.createElement('td')
+          tdP.textContent = String(u.playlistsCount ?? '')
+          tr.appendChild(tdP)
+
+          const tdL = document.createElement('td')
+          tdL.textContent = String(u.likesCount ?? '')
+          tr.appendChild(tdL)
+
+          const tdD = document.createElement('td')
+          tdD.textContent = String(u.downloadsCount ?? '')
+          tr.appendChild(tdD)
+
+          const tdR = document.createElement('td')
+          tdR.textContent = String(u.recentsCount ?? '')
+          tr.appendChild(tdR)
+
+          const tdAct = document.createElement('td')
+          const row = document.createElement('div')
+          row.className = 'row'
+
+          const resetBtn = document.createElement('button')
+          resetBtn.textContent = '重置密码'
+          resetBtn.addEventListener('click', async () => {
+            const next = window.prompt(`为用户 ${u.username} 设置新密码（6-64）`)
+            if (!next) return
+            try {
+              await api(`/api/admin/users/${encodeURIComponent(String(u.id || ''))}/password`, { method: 'POST', body: JSON.stringify({ newPassword: next }) })
+              $('usersMsg').textContent = '已重置密码'
+            } catch (e) {
+              $('usersMsg').textContent = e.message || '操作失败'
+            }
+          })
+
+          const delBtn = document.createElement('button')
+          delBtn.textContent = '删除'
+          delBtn.className = 'danger'
+          delBtn.addEventListener('click', async () => {
+            const ok = window.confirm(`确认删除用户 ${u.username}？`)
+            if (!ok) return
+            try {
+              await api(`/api/admin/users/${encodeURIComponent(String(u.id || ''))}`, { method: 'DELETE' })
+              await refreshUsers()
+            } catch (e) {
+              $('usersMsg').textContent = e.message || '删除失败'
+            }
+          })
+
+          row.appendChild(resetBtn)
+          row.appendChild(delBtn)
+          tdAct.appendChild(row)
+          tr.appendChild(tdAct)
+
+          tbody.appendChild(tr)
+        })
+      }
+
+      const homeState = { playlists: [], activePlaylistId: '', slides: [], searchResults: [], imageDataUrl: '' }
+
+      function getActiveHomePlaylistId() {
+        return String($('homePlaylistSelect')?.value || homeState.activePlaylistId || '')
+      }
+
+      function setActiveHomePlaylistId(id) {
+        homeState.activePlaylistId = String(id || '')
+        if ($('homePlaylistSelect')) $('homePlaylistSelect').value = homeState.activePlaylistId
+      }
+
+      function renderHomePlaylists() {
+        const sel = $('homePlaylistSelect')
+        if (!sel) return
+        sel.innerHTML = ''
+        const list = Array.isArray(homeState.playlists) ? homeState.playlists : []
+        list.forEach((p) => {
+          const opt = document.createElement('option')
+          opt.value = String(p.id || '')
+          opt.textContent = `${p.name || ''} (#${p.id})`
+          sel.appendChild(opt)
+        })
+        const nextId = getActiveHomePlaylistId() || (list[0] ? String(list[0].id || '') : '')
+        setActiveHomePlaylistId(nextId)
+        const active = list.find(p => String(p.id) === String(nextId))
+        $('homePlaylistTracksCount').textContent = active ? String(active.tracksCount ?? (Array.isArray(active.tracks) ? active.tracks.length : 0)) : '0'
+      }
+
+      async function refreshHomePlaylists() {
+        $('homePlaylistsMsg').textContent = ''
+        const r = await api('/api/admin/home/playlists', { method: 'GET' })
+        homeState.playlists = Array.isArray(r.playlists) ? r.playlists : []
+        if (!homeState.activePlaylistId && homeState.playlists[0]) homeState.activePlaylistId = String(homeState.playlists[0].id || '')
+        renderHomePlaylists()
+        await refreshHomePlaylistTracks().catch(() => {})
+      }
+
+      async function refreshHomePlaylistTracks() {
+        $('homePlaylistTracksMsg').textContent = ''
+        const pid = getActiveHomePlaylistId()
+        if (!pid) {
+          $('homePlaylistTracks').innerHTML = ''
+          return
+        }
+        const r = await api(`/api/admin/home/playlists/${encodeURIComponent(pid)}`, { method: 'GET' })
+        const pl = r && r.playlist ? r.playlist : null
+        const tracks = Array.isArray(pl?.tracks) ? pl.tracks : []
+        const root = $('homePlaylistTracks')
+        root.innerHTML = ''
+        tracks.forEach((t) => {
+          const div = document.createElement('div')
+          div.className = 'item'
+          const row = document.createElement('div')
+          row.className = 'itemRow'
+
+          const left = document.createElement('div')
+          const title = document.createElement('div')
+          title.textContent = `${t.name || ''} - ${t.artist || ''}`
+          const sub = document.createElement('div')
+          sub.className = 'muted'
+          sub.textContent = `${t.platform || ''} / ${t.id || ''}`
+          left.appendChild(title)
+          left.appendChild(sub)
+
+          const right = document.createElement('div')
+          right.className = 'row'
+          const rm = document.createElement('button')
+          rm.textContent = '移除'
+          rm.className = 'danger'
+          rm.addEventListener('click', async () => {
+            try {
+              await api(`/api/admin/home/playlists/${encodeURIComponent(pid)}/tracks/remove`, { method: 'POST', body: JSON.stringify({ platform: t.platform, id: t.id }) })
+              await refreshHomePlaylistTracks()
+              await refreshHomePlaylists()
+            } catch (e) {
+              $('homePlaylistTracksMsg').textContent = e.message || '移除失败'
+            }
+          })
+          right.appendChild(rm)
+
+          row.appendChild(left)
+          row.appendChild(right)
+          div.appendChild(row)
+          root.appendChild(div)
+        })
+        const current = homeState.playlists.find(p => String(p.id) === String(pid))
+        if (current) $('homePlaylistTracksCount').textContent = String(tracks.length)
+      }
+
+      function normalizeNetEaseSearchToTracks(json) {
+        const songs = json?.result?.songs
+        const list = Array.isArray(songs) ? songs : []
+        const getArtists = (ar) => (Array.isArray(ar) ? ar : []).map(x => x?.name).filter(Boolean).join(' / ')
+        return list.map((s) => ({
+          platform: 'netease',
+          id: String(s?.id || ''),
+          name: String(s?.name || ''),
+          artist: getArtists(s?.ar || s?.artists) || '',
+          album: String((s?.al || s?.album || {})?.name || ''),
+          coverUrl: String((s?.al || s?.album || {})?.picUrl || ''),
+        })).filter((t) => t.id)
+      }
+
+      function normalizeKuGouSearchToTracks(json) {
+        const lists = json?.data?.lists
+        const list = Array.isArray(lists) ? lists : []
+        return list.map((it) => {
+          const singers = Array.isArray(it?.Singers) ? it.Singers : []
+          const artists = singers.map((a) => a?.name).filter(Boolean).join(' / ')
+          return {
+            platform: 'kugou',
+            id: String(it?.FileHash || ''),
+            name: String(it?.OriSongName || ''),
+            artist: artists || '',
+            album: String(it?.AlbumName || ''),
+            coverUrl: String(it?.Image || ''),
+          }
+        }).filter((t) => t.id)
+      }
+
+      function renderHomeSearchResults() {
+        const root = $('homeSearchResults')
+        root.innerHTML = ''
+        const pid = getActiveHomePlaylistId()
+        const list = Array.isArray(homeState.searchResults) ? homeState.searchResults : []
+        list.forEach((t) => {
+          const div = document.createElement('div')
+          div.className = 'item'
+          const row = document.createElement('div')
+          row.className = 'itemRow'
+
+          const left = document.createElement('div')
+          const title = document.createElement('div')
+          title.textContent = `${t.name || ''} - ${t.artist || ''}`
+          const sub = document.createElement('div')
+          sub.className = 'muted'
+          sub.textContent = `${t.platform || ''} / ${t.id || ''}`
+          left.appendChild(title)
+          left.appendChild(sub)
+
+          const right = document.createElement('div')
+          right.className = 'row'
+          const addBtn = document.createElement('button')
+          addBtn.textContent = '加入歌单'
+          addBtn.disabled = !pid
+          addBtn.addEventListener('click', async () => {
+            if (!pid) return
+            try {
+              await api(`/api/admin/home/playlists/${encodeURIComponent(pid)}/tracks/add`, { method: 'POST', body: JSON.stringify({ track: t }) })
+              $('homeSearchMsg').textContent = '已加入'
+              await refreshHomePlaylistTracks()
+              await refreshHomePlaylists()
+            } catch (e) {
+              $('homeSearchMsg').textContent = e.message || '加入失败'
+            }
+          })
+          right.appendChild(addBtn)
+
+          row.appendChild(left)
+          row.appendChild(right)
+          div.appendChild(row)
+          root.appendChild(div)
+        })
+      }
+
+      async function doHomeSearch() {
+        $('homeSearchMsg').textContent = ''
+        const kw = String($('homeSearchKeywords')?.value || '').trim()
+        if (!kw) return
+        const [neRes, kgRes] = await Promise.all([
+          fetch(`/netease/cloudsearch?keywords=${encodeURIComponent(kw)}&limit=20&offset=0&type=1`, { credentials: 'include' }).then(r => r.json()).catch(() => null),
+          fetch(`/kugou/search?keywords=${encodeURIComponent(kw)}&page=1&pagesize=20&type=song`, { credentials: 'include' }).then(r => r.json()).catch(() => null),
+        ])
+        const out = [...normalizeKuGouSearchToTracks(kgRes), ...normalizeNetEaseSearchToTracks(neRes)]
+        const seen = new Set()
+        homeState.searchResults = out.filter((t) => {
+          const key = `${t.platform}:${t.id}`
+          if (seen.has(key)) return false
+          seen.add(key)
+          return true
+        }).slice(0, 40)
+        renderHomeSearchResults()
+      }
+
+      async function refreshSlides() {
+        $('slidesMsg').textContent = ''
+        const r = await api('/api/admin/home/slides', { method: 'GET' })
+        homeState.slides = Array.isArray(r.slides) ? r.slides : []
+        renderSlides()
+      }
+
+      function renderSlides() {
+        const root = $('slidesList')
+        root.innerHTML = ''
+        const list = Array.isArray(homeState.slides) ? homeState.slides : []
+        list.forEach((s) => {
+          const div = document.createElement('div')
+          div.className = 'item'
+          const row = document.createElement('div')
+          row.className = 'itemRow'
+
+          const left = document.createElement('div')
+          const title = document.createElement('div')
+          const pid = String(s.playlistId || '')
+          const pl = homeState.playlists.find(p => String(p.id) === pid)
+          title.textContent = `幻灯片 #${s.id || ''} → 歌单 ${pl ? pl.name : pid}`
+          const sub = document.createElement('div')
+          sub.className = 'muted'
+          sub.textContent = `playlistId=${pid}  updatedAt=${formatDate(s.updatedAt)}`
+          left.appendChild(title)
+          left.appendChild(sub)
+
+          const right = document.createElement('div')
+          right.className = 'row'
+
+          const img = document.createElement('img')
+          img.className = 'thumb'
+          img.alt = 'slide'
+          img.src = s.imageDataUrl || s.imageUrl || ''
+          right.appendChild(img)
+
+          const editBtn = document.createElement('button')
+          editBtn.textContent = '编辑'
+          editBtn.addEventListener('click', async () => {
+            const nextPid = window.prompt('绑定歌单ID', String(s.playlistId || ''))
+            if (!nextPid) return
+            const nextUrl = window.prompt('图片链接（留空表示不改）', '')
+            const payload = { playlistId: nextPid }
+            if (nextUrl) payload.imageUrl = nextUrl
+            try {
+              await api(`/api/admin/home/slides/${encodeURIComponent(String(s.id || ''))}`, { method: 'PUT', body: JSON.stringify(payload) })
+              await refreshSlides()
+            } catch (e) {
+              $('slidesMsg').textContent = e.message || '编辑失败'
+            }
+          })
+
+          const delBtn = document.createElement('button')
+          delBtn.textContent = '删除'
+          delBtn.className = 'danger'
+          delBtn.addEventListener('click', async () => {
+            const ok = window.confirm('确认删除该幻灯片？')
+            if (!ok) return
+            try {
+              await api(`/api/admin/home/slides/${encodeURIComponent(String(s.id || ''))}`, { method: 'DELETE' })
+              await refreshSlides()
+            } catch (e) {
+              $('slidesMsg').textContent = e.message || '删除失败'
+            }
+          })
+
+          right.appendChild(editBtn)
+          right.appendChild(delBtn)
+
+          row.appendChild(left)
+          row.appendChild(right)
+          div.appendChild(row)
+          root.appendChild(div)
+        })
+      }
+
+      async function startQr() {
+        stopPolling()
+        $('kugouMsg').textContent = ''
+        $('qrStatus').textContent = ''
+        $('qrKey').textContent = ''
+        setVisible($('qrImg'), false)
+
+        const r = await api('/api/admin/kugou/qr/start', { method: 'POST', body: '{}' })
+        state.key = r.key || ''
+        $('qrKey').textContent = state.key
+        if (r.qrcode && r.qrcode.base64) {
+          $('qrImg').src = r.qrcode.base64
+          setVisible($('qrImg'), true)
+        }
+
+        $('stopPollBtn').disabled = false
+        state.pollTimer = setInterval(pollOnce, 1500)
+        await pollOnce()
+      }
+
+      async function pollOnce() {
+        if (!state.key) return
+        try {
+          const r = await api(`/api/admin/kugou/qr/poll?key=${encodeURIComponent(state.key)}`, { method: 'GET' })
+          $('qrStatus').textContent = statusText(r.status)
+          if (r.saved) {
+            $('kugouMsg').textContent = '已保存酷狗 token/userid，可直接调用酷狗接口。'
+            stopPolling()
+            await refreshAuth()
+          }
+        } catch (e) {
+          $('kugouMsg').textContent = e.message || '请求失败'
+        }
+      }
+
+      $('loginBtn').addEventListener('click', async () => {
+        $('loginMsg').textContent = ''
+        try {
+          const username = $('username').value
+          const password = $('password').value
+          await api('/api/admin/login', { method: 'POST', body: JSON.stringify({ username, password }) })
+          await refreshMe()
+        } catch (e) {
+          $('loginMsg').textContent = e.message || '登录失败'
+        }
+      })
+
+      $('logoutBtn').addEventListener('click', async () => {
+        stopPolling()
+        await api('/api/admin/logout', { method: 'POST', body: '{}' })
+        await refreshMe()
+      })
+
+      $('startQrBtn').addEventListener('click', async () => {
+        try {
+          await startQr()
+        } catch (e) {
+          $('kugouMsg').textContent = e.message || '生成二维码失败'
+        }
+      })
+
+      $('stopPollBtn').addEventListener('click', () => {
+        stopPolling()
+        $('kugouMsg').textContent = '已停止轮询'
+      })
+
+      $('clearAuthBtn').addEventListener('click', async () => {
+        $('kugouMsg').textContent = ''
+        await api('/api/admin/kugou/clear', { method: 'POST', body: '{}' })
+        await refreshAuth()
+        $('kugouMsg').textContent = '已清除'
+      })
+
+      $('changePasswordBtn').addEventListener('click', async () => {
+        $('passwordMsg').textContent = ''
+        const oldPassword = $('oldPassword').value
+        const newPassword = $('newPassword').value
+        const newPassword2 = $('newPassword2').value
+        if (!newPassword || newPassword.length < 8) {
+          $('passwordMsg').textContent = '新密码长度需为 8-64'
+          return
+        }
+        if (newPassword !== newPassword2) {
+          $('passwordMsg').textContent = '两次输入的新密码不一致'
+          return
+        }
+        try {
+          await api('/api/admin/password', { method: 'POST', body: JSON.stringify({ oldPassword, newPassword }) })
+          $('oldPassword').value = ''
+          $('newPassword').value = ''
+          $('newPassword2').value = ''
+          $('passwordMsg').textContent = '修改成功'
+        } catch (e) {
+          $('passwordMsg').textContent = e.message || '修改失败'
+        }
+      })
+
+      $('refreshUsersBtn').addEventListener('click', async () => {
+        try {
+          await refreshUsers()
+        } catch (e) {
+          $('usersMsg').textContent = e.message || '刷新失败'
+        }
+      })
+
+      $('refreshHomePlaylistsBtn').addEventListener('click', async () => {
+        try {
+          await refreshHomePlaylists()
+          await refreshSlides()
+        } catch (e) {
+          $('homePlaylistsMsg').textContent = e.message || '刷新失败'
+        }
+      })
+
+      $('createHomePlaylistBtn').addEventListener('click', async () => {
+        $('homePlaylistsMsg').textContent = ''
+        const name = String($('homePlaylistName')?.value || '').trim()
+        if (!name) return
+        try {
+          const r = await api('/api/admin/home/playlists', { method: 'POST', body: JSON.stringify({ name }) })
+          $('homePlaylistName').value = ''
+          await refreshHomePlaylists()
+          const nextId = r && r.playlist ? String(r.playlist.id || '') : ''
+          if (nextId) setActiveHomePlaylistId(nextId)
+          await refreshHomePlaylistTracks()
+        } catch (e) {
+          $('homePlaylistsMsg').textContent = e.message || '创建失败'
+        }
+      })
+
+      $('homePlaylistSelect').addEventListener('change', async () => {
+        setActiveHomePlaylistId(getActiveHomePlaylistId())
+        await refreshHomePlaylistTracks().catch(() => {})
+      })
+
+      $('deleteHomePlaylistBtn').addEventListener('click', async () => {
+        $('homePlaylistsMsg').textContent = ''
+        const pid = getActiveHomePlaylistId()
+        if (!pid) return
+        const pl = homeState.playlists.find(p => String(p.id) === String(pid))
+        const ok = window.confirm(`确认删除歌单 ${pl ? pl.name : pid}？同时会移除绑定的幻灯片。`)
+        if (!ok) return
+        try {
+          await api(`/api/admin/home/playlists/${encodeURIComponent(pid)}`, { method: 'DELETE' })
+          homeState.activePlaylistId = ''
+          await refreshHomePlaylists()
+          await refreshSlides()
+        } catch (e) {
+          $('homePlaylistsMsg').textContent = e.message || '删除失败'
+        }
+      })
+
+      $('homeSearchBtn').addEventListener('click', async () => {
+        try {
+          await doHomeSearch()
+        } catch (e) {
+          $('homeSearchMsg').textContent = e.message || '搜索失败'
+        }
+      })
+
+      $('homeSearchKeywords').addEventListener('keydown', async (e) => {
+        if (e.key === 'Enter') $('homeSearchBtn').click()
+      })
+
+      $('refreshHomePlaylistTracksBtn').addEventListener('click', async () => {
+        try {
+          await refreshHomePlaylistTracks()
+        } catch (e) {
+          $('homePlaylistTracksMsg').textContent = e.message || '刷新失败'
+        }
+      })
+
+      $('slideImageFile').addEventListener('change', async () => {
+        $('slidesMsg').textContent = ''
+        homeState.imageDataUrl = ''
+        const file = $('slideImageFile').files && $('slideImageFile').files[0] ? $('slideImageFile').files[0] : null
+        if (!file) return
+        const dataUrl = await new Promise((resolve) => {
+          const r = new FileReader()
+          r.onload = () => resolve(String(r.result || ''))
+          r.onerror = () => resolve('')
+          r.readAsDataURL(file)
+        })
+        homeState.imageDataUrl = dataUrl
+        if (dataUrl) $('slidesMsg').textContent = '已读取图片，可直接添加幻灯片'
+      })
+
+      $('addSlideBtn').addEventListener('click', async () => {
+        $('slidesMsg').textContent = ''
+        const pid = getActiveHomePlaylistId()
+        if (!pid) {
+          $('slidesMsg').textContent = '请先选择歌单'
+          return
+        }
+        const imageUrl = String($('slideImageUrl')?.value || '').trim()
+        const imageDataUrl = String(homeState.imageDataUrl || '')
+        if (!imageUrl && !imageDataUrl) {
+          $('slidesMsg').textContent = '请填写图片链接或上传图片'
+          return
+        }
+        try {
+          await api('/api/admin/home/slides', { method: 'POST', body: JSON.stringify({ playlistId: pid, imageUrl, imageDataUrl }) })
+          $('slideImageUrl').value = ''
+          $('slideImageFile').value = ''
+          homeState.imageDataUrl = ''
+          await refreshSlides()
+          $('slidesMsg').textContent = '已添加'
+        } catch (e) {
+          $('slidesMsg').textContent = e.message || '添加失败'
+        }
+      })
+
+      $('refreshSlidesBtn').addEventListener('click', async () => {
+        try {
+          await refreshSlides()
+        } catch (e) {
+          $('slidesMsg').textContent = e.message || '刷新失败'
+        }
+      })
+
+      refreshMe().catch(err => {
+        $('loginCard').classList.remove('hidden')
+        $('loginMsg').textContent = err && err.message ? err.message : '初始化失败'
+      })
+    </script>
+  </body>
+</html>

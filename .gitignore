@@ -1,0 +1,13 @@
+node_modules/
+**/node_modules/
+
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+.DS_Store
+Thumbs.db
+
+magic-music-db.json
