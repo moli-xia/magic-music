@@ -24,9 +24,9 @@ magic-music/
 
 ## 快速开始
 
-### 推荐：Docker 快速部署
+### 推荐：从 Docker Hub 快速部署
 
-使用你已发布到 Docker Hub 的镜像（推荐）：
+使用 Docker Hub 镜像 `superneed/magic-music`（推荐，无需本地构建）：
 
 ```bash
 docker compose pull
@@ -99,7 +99,7 @@ PORT=3002 node app.js
 ## Docker Run
 
 ```bash
-docker build -t superneed/magic-music:latest .
+docker pull superneed/magic-music:latest
 docker run -d \
   --name magic-music \
   -p 8099:8099 \
