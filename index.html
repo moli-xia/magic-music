@@ -402,6 +402,7 @@
             #auth-captcha-img {
                 width: 9.5rem !important;
                 height: 3.25rem !important;
+                flex: 0 0 auto !important;
             }
 
             #auth-captcha-img svg {
@@ -739,10 +740,12 @@
                                     <input id="login-password" type="password" placeholder="密码（至少 6 位）" class="w-full text-sm rounded-md px-3 py-2 bg-material-text/5 text-material-text placeholder-material-text-secondary/70 focus:outline-none focus:bg-material-text/10">
                                     <div class="mt-2">
                                         <input id="auth-captcha-id" type="hidden">
-                                        <div class="flex items-center gap-2">
-                                            <div id="auth-captcha-img" class="h-10 w-28 rounded-md bg-material-text/5 border border-material-border/60 flex items-center justify-center overflow-hidden select-none"></div>
-                                            <input id="auth-captcha-code" type="text" placeholder="验证码" class="flex-1 text-sm rounded-md px-3 py-2 bg-material-text/5 text-material-text placeholder-material-text-secondary/70 focus:outline-none focus:bg-material-text/10">
-                                            <button id="auth-captcha-refresh" type="button" class="text-xs px-3 py-2 rounded-md bg-material-text/5 text-material-text-secondary hover:bg-material-text/10 hover:text-material-text transition shrink-0">刷新</button>
+                                        <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+                                            <div class="flex items-center gap-2">
+                                                <div id="auth-captcha-img" class="h-10 w-28 shrink-0 rounded-md bg-material-text/5 border border-material-border/60 flex items-center justify-center overflow-hidden select-none"></div>
+                                                <button id="auth-captcha-refresh" type="button" class="text-xs px-3 py-2 rounded-md bg-material-text/5 text-material-text-secondary hover:bg-material-text/10 hover:text-material-text transition shrink-0">刷新</button>
+                                            </div>
+                                            <input id="auth-captcha-code" type="text" placeholder="验证码" class="w-full sm:flex-1 text-sm rounded-md px-3 py-2 bg-material-text/5 text-material-text placeholder-material-text-secondary/70 focus:outline-none focus:bg-material-text/10">
                                         </div>
                                     </div>
                                     <button id="login-submit" type="button" class="w-full text-xs px-3 py-2 rounded-full bg-material-primary text-material-on-primary hover:bg-material-primary/80 transition">登录</button>
