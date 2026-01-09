@@ -101,6 +101,24 @@
             background: #555; 
         }
 
+        :root {
+            scrollbar-color: #333 #121212;
+            scrollbar-width: thin;
+        }
+
+        :root.light ::-webkit-scrollbar-track {
+            background: #ffffff;
+        }
+        :root.light ::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+        }
+        :root.light ::-webkit-scrollbar-thumb:hover {
+            background: #9ca3af;
+        }
+        :root.light {
+            scrollbar-color: #d1d5db #ffffff;
+        }
+
         .hide-scrollbar::-webkit-scrollbar {
             display: none;
         }
@@ -161,7 +179,7 @@
                 radial-gradient(closest-side at 80% 35%, rgba(3, 218, 198, 0.45), transparent 60%),
                 radial-gradient(closest-side at 50% 85%, rgba(255, 90, 205, 0.45), transparent 58%),
                 radial-gradient(closest-side at 30% 75%, rgba(0, 153, 255, 0.35), transparent 55%),
-                radial-gradient(closest-side at 70% 70%, rgba(255, 225, 90, 0.25), transparent 55%);
+                radial-gradient(closest-side at 70% 70%, rgba(98, 0, 238, 0.22), transparent 55%);
             animation: mmPsyShift 14s ease-in-out infinite;
             will-change: transform, filter;
             opacity: 0.95;
@@ -175,6 +193,13 @@
                 radial-gradient(900px 500px at 50% 100%, rgba(0, 0, 0, 0.45), transparent 65%),
                 linear-gradient(to bottom, rgba(0,0,0,0.08), rgba(0,0,0,0.28));
             pointer-events: none;
+        }
+
+        :root.light .mm-psy-vignette {
+            background:
+                radial-gradient(1200px 600px at 50% 10%, rgba(255, 255, 255, 0.55), transparent 60%),
+                radial-gradient(900px 500px at 50% 100%, rgba(255, 255, 255, 0.35), transparent 65%),
+                linear-gradient(to bottom, rgba(255,255,255,0.10), rgba(255,255,255,0.04));
         }
 
         .mm-glass {
@@ -284,6 +309,13 @@
             -webkit-backdrop-filter: none !important;
         }
 
+        :root.light #player-page-carousel-track > div:nth-child(2) .mm-glass {
+            background: transparent !important;
+            border: none !important;
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+        }
+
         #player-page-section .mm-lyrics {
             max-height: none;
             flex: 1 1 auto;
@@ -321,10 +353,9 @@
         .mm-lyric-line.is-active {
             opacity: 1;
             filter: blur(0);
-            transform: scale(1.3);
+            transform: scale(1.18);
             font-weight: 700;
-            margin: 16px 0;
-            background: linear-gradient(120deg, #ff0080, #7928ca, #ff0080, #ff4d4d, #f9cb28, #7928ca);
+            background: linear-gradient(120deg, #ff0080, #7928ca, #03dac6, #ff4d4d, #bb86fc, #7928ca);
             background-size: 400% 400%;
             -webkit-background-clip: text;
             background-clip: text;
@@ -335,7 +366,7 @@
 
         /* Dynamic Single Lyric Style */
         #player-page-single-lyric {
-            background: linear-gradient(120deg, #ff0080, #7928ca, #ff0080, #ff4d4d, #f9cb28, #7928ca);
+            background: linear-gradient(120deg, #ff0080, #7928ca, #03dac6, #ff4d4d, #bb86fc, #7928ca);
             background-size: 400% 400%;
             -webkit-background-clip: text;
             background-clip: text;
@@ -343,6 +374,80 @@
             color: transparent;
             animation: mmRainbowFlow 8s ease infinite;
             font-weight: 700;
+        }
+
+        @media (max-width: 767px) {
+            nav.md\:hidden {
+                position: fixed !important;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                height: calc(56px + env(safe-area-inset-bottom, 0px)) !important;
+                padding-bottom: env(safe-area-inset-bottom, 0px);
+            }
+
+            #player-bar {
+                position: fixed !important;
+                left: 0;
+                right: 0;
+                bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+                margin-bottom: 0 !important;
+            }
+
+            #player-page-section .mm-lyrics {
+                font-size: 12px !important;
+                line-height: 1.55 !important;
+            }
+
+            .mm-lyric-line {
+                filter: blur(0.4px);
+                transform: scale(0.98);
+            }
+
+            .mm-lyric-line.is-active {
+                transform: scale(1.08);
+            }
+
+            body.mm-player-page-open #app-scroll {
+                overflow: hidden !important;
+            }
+
+            body.mm-player-page-open #player-page-section {
+                position: fixed;
+                inset: 0;
+                margin: 0 !important;
+                padding: 0 !important;
+                z-index: 60;
+            }
+
+            body.mm-player-page-open header.md\:hidden {
+                display: none !important;
+            }
+
+            body.mm-player-page-open #player-page-section .mm-psy-shell {
+                height: calc(100vh - 72px);
+                border-radius: 0 !important;
+                border-left: none !important;
+                border-right: none !important;
+            }
+
+            body.mm-player-page-open #player-bar {
+                position: fixed !important;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                margin-bottom: 0 !important;
+                z-index: 70;
+            }
+
+            body.mm-player-page-open nav.md\:hidden {
+                display: none !important;
+            }
+
+            body.mm-player-page-open #player-time-current,
+            body.mm-player-page-open #player-time-total {
+                display: block !important;
+            }
         }
 
         /* Playing Icon Animation */
@@ -464,7 +569,7 @@
                     </a>
                     <a id="nav-downloads" href="/downloads" class="flex items-center gap-3 px-3 py-2 text-material-text-secondary hover:text-material-text hover:bg-material-text/5 rounded-md transition-colors group">
                         <span class="material-icons text-[20px]">download</span>
-                        <span class="text-sm font-medium">下载</span>
+                        <span class="text-sm font-medium">下载记录</span>
                     </a>
                     <a id="nav-recent" href="/recent" class="flex items-center gap-3 px-3 py-2 text-material-text-secondary hover:text-material-text hover:bg-material-text/5 rounded-md transition-colors group">
                         <span class="material-icons text-[20px]">history</span>
@@ -581,7 +686,7 @@
         </header>
 
         <!-- Scrollable Content -->
-        <div class="flex-1 overflow-y-auto px-4 md:px-8 pb-32 md:pb-32 custom-scrollbar">
+        <div id="app-scroll" class="flex-1 overflow-y-auto px-4 md:px-8 pb-32 md:pb-32 custom-scrollbar">
             <section id="search-results-section" class="hidden mt-4 mb-6">
                 <div class="flex items-center justify-between mb-3">
                     <h2 id="search-results-title" class="text-lg md:text-xl font-bold text-material-text">搜索结果</h2>
@@ -593,13 +698,6 @@
             </section>
 
             <section id="login-page-section" class="hidden mt-4 mb-8">
-                <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-xl font-bold text-material-text flex items-center gap-2">
-                        <span class="material-icons text-material-primary">person</span>
-                        登录 / 注册
-                    </h2>
-                    <a href="/" class="text-xs px-3 py-2 rounded-full bg-material-text/5 text-material-text-secondary hover:bg-material-text/10 hover:text-material-text transition">返回推荐</a>
-                </div>
                 <div class="space-y-4 max-w-md w-full mx-auto">
                     <div class="bg-material-surface/50 border border-material-border/60 rounded-xl p-4">
                         <div class="flex items-center justify-between gap-3 mb-3">
@@ -860,7 +958,7 @@
                                 <div id="player-page-carousel-track" class="flex w-full transition-transform duration-300 ease-out">
                                     <div class="w-full shrink-0 flex flex-col items-center">
                                         <div class="mm-vinyl-float flex flex-col items-center">
-                                            <div id="player-page-vinyl" class="mm-vinyl w-[260px] h-[260px] md:w-[320px] md:h-[320px]">
+                                            <div id="player-page-vinyl" class="mm-vinyl w-[210px] h-[210px] md:w-[320px] md:h-[320px]">
                                                 <div class="mm-vinyl-inner">
                                                     <img id="player-page-cover" src="" alt="cover" class="w-full h-full object-cover hidden">
                                                     <div id="player-page-cover-fallback" class="w-full h-full flex items-center justify-center text-material-text-secondary">
@@ -870,12 +968,12 @@
                                                 <div class="mm-vinyl-hole"></div>
                                             </div>
                                             <!-- Single line lyric display -->
-                                            <div id="player-page-single-lyric" class="mt-8 text-center text-2xl md:text-3xl font-bold min-h-[3rem] px-4 line-clamp-2 transition-opacity duration-300"></div>
+                                            <div id="player-page-single-lyric" class="mt-6 md:mt-8 text-center text-lg md:text-3xl font-bold min-h-[3rem] px-4 line-clamp-2 transition-opacity duration-300"></div>
                                         </div>
                                     </div>
                                     <div class="w-full shrink-0">
                                         <div class="mm-glass rounded-2xl p-4 h-full box-border">
-                                            <div id="player-page-lyrics" class="mm-lyrics text-base text-material-text-secondary whitespace-pre-line leading-8">暂无歌词</div>
+                                            <div id="player-page-lyrics" class="mm-lyrics text-sm md:text-base text-material-text-secondary whitespace-pre-line leading-7 md:leading-8">暂无歌词</div>
                                         </div>
                                     </div>
                                 </div>
@@ -894,15 +992,18 @@
         <div id="player-bar" class="absolute bottom-0 md:bottom-0 left-0 right-0 mm-glass border-t border-material-border px-4 flex items-center justify-between z-30 mb-[56px] md:mb-0 transition-all duration-300 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] h-[72px] md:h-[88px]">
             <!-- Track Info (Left) -->
             <div class="flex items-center gap-4 flex-1 min-w-0">
-                <div class="relative group shrink-0">
-                    <img id="player-cover" src="https://images.unsplash.com/photo-1493225255756-d9584f8606e9?q=80&w=100&h=100&fit=crop" class="w-12 h-12 md:w-14 md:h-14 rounded-md bg-gray-700 shadow-sm object-cover" alt="Mini Cover">
+                <div id="player-cover-trigger" class="relative group shrink-0">
+                    <div class="w-12 h-12 md:w-14 md:h-14 rounded-md bg-material-text/10 shadow-sm overflow-hidden flex items-center justify-center">
+                        <img id="player-cover" src="" class="w-full h-full object-cover hidden" alt="Mini Cover">
+                        <span id="player-cover-fallback" class="material-icons text-material-text-secondary text-2xl">album</span>
+                    </div>
                     <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-md cursor-pointer">
                         <span id="player-cover-overlay-icon" class="material-icons text-white text-xl">expand_less</span>
                     </div>
                 </div>
                 <div class="overflow-hidden min-w-0 flex flex-col justify-center">
-                    <h4 id="player-title" class="text-sm md:text-base font-medium text-material-text truncate cursor-pointer hover:underline">Midnight City</h4>
-                    <p id="player-artist" class="text-xs md:text-sm text-material-text-secondary truncate hover:underline cursor-pointer">M83</p>
+                    <h4 id="player-title" class="text-sm md:text-base font-medium text-material-text truncate cursor-pointer hover:underline">未播放</h4>
+                    <p id="player-artist" class="text-xs md:text-sm text-material-text-secondary truncate hover:underline cursor-pointer">—</p>
                 </div>
                 <button id="player-like-btn" class="w-8 h-8 flex items-center justify-center rounded-full text-material-text-secondary hover:text-material-primary hover:bg-material-text/5 transition hidden sm:flex shrink-0" type="button" title="喜欢">
                     <span class="material-icons text-xl">favorite_border</span>
@@ -1035,6 +1136,7 @@
         const playBtn = document.getElementById('main-play-btn');
         const playerBar = document.getElementById('player-bar');
         const playerCover = document.getElementById('player-cover');
+        const playerCoverFallback = document.getElementById('player-cover-fallback');
         const playerTitle = document.getElementById('player-title');
         const playerArtist = document.getElementById('player-artist');
         const playerDownloadBtn = document.getElementById('player-download-btn');
@@ -1196,6 +1298,16 @@
         let playlistEditing = null;
         let playlistEditingName = '';
         let playlistDeleting = null;
+
+        function platformLabel(platform) {
+            const p = platform ? String(platform) : '';
+            if (!p) return '';
+            if (p === 'kugou') return '酷狗';
+            if (p === 'netease') return '网易云';
+            if (p === 'local') return '本地库';
+            if (p === 'spotify') return 'Spotify';
+            return p;
+        }
 
         function formatTime(sec) {
             const s = Math.max(0, Math.floor(sec || 0));
@@ -1714,8 +1826,120 @@
                 });
             }
 
-            // Drag logic removed as per user request to "fix" the page position
+            const isMobile = () => window.matchMedia && window.matchMedia('(max-width: 767px)').matches;
+
+            const getTrackWidth = () => {
+                if (!playerPageCarousel) return 0;
+                return Math.max(1, playerPageCarousel.getBoundingClientRect().width || 0);
+            };
+
+            const onPointerDown = (e) => {
+                if (!isMobile()) return;
+                if (!e.isPrimary) return;
+                if (playerPagePointerDown) return;
+                playerPagePointerDown = true;
+                playerPageActivePointerId = e.pointerId;
+                playerPageStartX = e.clientX;
+                playerPageStartY = e.clientY;
+                playerPageDragLocked = null;
+                playerPageIsDragging = false;
+                if (playerPageCarousel && playerPageCarousel.setPointerCapture) {
+                    try { playerPageCarousel.setPointerCapture(e.pointerId); } catch {}
+                }
+            };
+
+            const onPointerMove = (e) => {
+                if (!playerPagePointerDown) return;
+                if (playerPageActivePointerId != null && e.pointerId !== playerPageActivePointerId) return;
+                if (!playerPageCarouselTrack) return;
+                const dx = e.clientX - playerPageStartX;
+                const dy = e.clientY - playerPageStartY;
+
+                if (!playerPageDragLocked) {
+                    const adx = Math.abs(dx);
+                    const ady = Math.abs(dy);
+                    if (adx < 10 && ady < 10) return;
+                    playerPageDragLocked = adx > ady ? 'x' : 'y';
+                }
+
+                if (playerPageDragLocked !== 'x') return;
+                playerPageIsDragging = true;
+                e.preventDefault();
+                const w = getTrackWidth();
+                const offset = (-playerPageViewIndex * w) + dx;
+                playerPageCarouselTrack.style.transition = 'none';
+                playerPageCarouselTrack.style.transform = `translateX(${offset}px)`;
+            };
+
+            const onPointerUp = (e) => {
+                if (!playerPagePointerDown) return;
+                if (playerPageActivePointerId != null && e.pointerId !== playerPageActivePointerId) return;
+                playerPagePointerDown = false;
+                playerPageActivePointerId = null;
+                const dx = e.clientX - playerPageStartX;
+                const dy = e.clientY - playerPageStartY;
+                const absDx = Math.abs(dx);
+                const absDy = Math.abs(dy);
+
+                if (!playerPageIsDragging || absDx < 20 || absDx < absDy) {
+                    setPlayerPageView(playerPageViewIndex, true);
+                    playerPageIsDragging = false;
+                    playerPageDragLocked = null;
+                    return;
+                }
+
+                const w = getTrackWidth();
+                const threshold = Math.max(60, w * 0.18);
+                if (dx <= -threshold) setPlayerPageView(1, true);
+                else if (dx >= threshold) setPlayerPageView(0, true);
+                else setPlayerPageView(playerPageViewIndex, true);
+
+                playerPageIsDragging = false;
+                playerPageDragLocked = null;
+            };
+
+            playerPageCarousel.addEventListener('pointerdown', onPointerDown, { passive: true });
+            playerPageCarousel.addEventListener('pointermove', onPointerMove, { passive: false });
+            playerPageCarousel.addEventListener('pointerup', onPointerUp, { passive: true });
+            playerPageCarousel.addEventListener('pointercancel', onPointerUp, { passive: true });
+
             window.addEventListener('resize', () => setPlayerPageView(playerPageViewIndex, false));
+        }
+
+        let mobilePlayerPageOpen = false;
+
+        function isMobileViewport() {
+            return !!(window.matchMedia && window.matchMedia('(max-width: 767px)').matches);
+        }
+
+        function setMobilePlayerPageOpen(open) {
+            if (!isMobileViewport()) return;
+            const next = !!open;
+            mobilePlayerPageOpen = next;
+            document.body.classList.toggle('mm-player-page-open', next);
+            const icon = document.getElementById('player-cover-overlay-icon');
+            if (icon) icon.innerText = next ? 'expand_more' : 'expand_less';
+            if (next) setPlayerPageView(0, false);
+        }
+
+        function initMobilePlayerPageFullscreen() {
+            const trigger = document.getElementById('player-cover-trigger');
+            if (!trigger) return;
+
+            trigger.addEventListener('click', () => {
+                if (!isMobileViewport()) return;
+                if (!currentTrack) return;
+                setMobilePlayerPageOpen(!mobilePlayerPageOpen);
+            });
+
+            window.addEventListener('resize', () => {
+                if (!isMobileViewport() && mobilePlayerPageOpen) {
+                    mobilePlayerPageOpen = false;
+                    document.body.classList.remove('mm-player-page-open');
+                    const icon = document.getElementById('player-cover-overlay-icon');
+                    if (icon) icon.innerText = 'expand_less';
+                }
+            });
         }
 
         const SIDEBAR_COLLAPSED_KEY = 'magicMusic_sidebarCollapsed_v1';
@@ -1893,12 +2117,12 @@
             playerPageLyricActiveIndex = -1;
 
             const wrap = document.createElement('div');
-            wrap.className = 'flex flex-col items-center gap-6 py-[45vh]';
+            wrap.className = 'flex flex-col items-center gap-6 py-[50vh]';
 
             for (let i = 0; i < playerPageLyricLines.length; i += 1) {
                 const row = playerPageLyricLines[i];
                 const el = document.createElement('div');
-                el.className = 'mm-lyric-line text-2xl text-center px-4 select-none';
+                el.className = 'mm-lyric-line w-full text-2xl text-center px-4 select-none';
                 el.innerText = row?.text || '';
                 
                 // Click to seek functionality could be added here
@@ -2059,10 +2283,10 @@
             }
             playerPageTitle.innerText = currentTrack.name || '未知歌曲';
             playerPageArtist.innerText = currentTrack.artist || '未知歌手';
-            const p = currentTrack.platform ? String(currentTrack.platform) : '';
+            const p = platformLabel(currentTrack.platform);
             const metaParts = [];
             if (currentTrack.album) metaParts.push(currentTrack.album);
-            if (p) metaParts.push(p);
+            if (p && p !== '酷狗') metaParts.push(p);
             playerPageMeta.innerText = metaParts.length ? metaParts.join(' · ') : '—';
 
             const coverUrl = proxify(currentTrack.coverUrl) || '';
@@ -2079,6 +2303,41 @@
             updatePlayerPagePlayUI();
             updatePlayerPageModeUI();
             loadLyricsForTrack(currentTrack).catch(() => {});
+        }
+
+        function setPlayerBarDisabled(disabled) {
+            const btns = [playerLikeBtn, playerDownloadBtn, playerAddToPlaylistBtn, prevBtn, nextBtn];
+            for (const b of btns) {
+                if (!b) continue;
+                b.classList.toggle('opacity-40', disabled);
+                b.classList.toggle('pointer-events-none', disabled);
+            }
+        }
+
+        function updatePlayerBarUI() {
+            if (!playerTitle || !playerArtist) return;
+            if (!currentTrack) {
+                playerTitle.innerText = '未播放';
+                playerArtist.innerText = '—';
+                if (playerCover) playerCover.classList.add('hidden');
+                if (playerCoverFallback) playerCoverFallback.classList.remove('hidden');
+                setPlayerBarDisabled(true);
+                updateLikeButtonUI();
+                return;
+            }
+            playerTitle.innerText = currentTrack.name || '未知歌曲';
+            playerArtist.innerText = currentTrack.artist || '未知歌手';
+            const coverUrl = proxify(currentTrack.coverUrl) || '';
+            if (playerCover && coverUrl) {
+                playerCover.src = coverUrl;
+                playerCover.classList.remove('hidden');
+                if (playerCoverFallback) playerCoverFallback.classList.add('hidden');
+            } else {
+                if (playerCover) playerCover.classList.add('hidden');
+                if (playerCoverFallback) playerCoverFallback.classList.remove('hidden');
+            }
+            setPlayerBarDisabled(false);
+            updateLikeButtonUI();
         }
 
         function renderMyLists() {
@@ -2175,7 +2434,7 @@
                 const cover = document.createElement('img');
                 cover.className = 'w-10 h-10 rounded-md object-cover bg-material-text/10 shrink-0';
                 cover.alt = 'cover';
-                cover.src = proxify(track.coverUrl) || playerCover?.src || '';
+                cover.src = proxify(track.coverUrl) || '';
 
                 const meta = document.createElement('div');
                 meta.className = 'flex-1 min-w-0';
@@ -2184,7 +2443,8 @@
                 title.innerText = track.name || '';
                 const sub = document.createElement('div');
                 sub.className = 'text-xs text-material-text-secondary truncate';
-                sub.innerText = `${track.artist || ''}${track.album ? ' · ' + track.album : ''}`;
+                const platformTag = platformLabel(track.platform);
+                sub.innerText = `${track.artist || ''}${track.album ? ' · ' + track.album : ''}${platformTag ? ' · ' + platformTag : ''}`;
                 meta.appendChild(title);
                 meta.appendChild(sub);
 
@@ -2307,10 +2567,7 @@
         async function playTrack(track) {
             currentTrack = track;
             ensureQueueIndexForTrack(track);
-            if (playerTitle) playerTitle.innerText = track.name || '未知歌曲';
-            if (playerArtist) playerArtist.innerText = track.artist || '未知歌手';
-            if (playerCover) playerCover.src = proxify(track.coverUrl) || playerCover.src;
-            updateLikeButtonUI();
+            updatePlayerBarUI();
             updatePlayerPageUI();
             let url = track._resolvedUrl || '';
             if (!url) {
@@ -2366,7 +2623,7 @@
                 const cover = document.createElement('img');
                 cover.className = 'w-10 h-10 rounded-md object-cover bg-material-text/10 shrink-0';
                 cover.alt = 'cover';
-                cover.src = proxify(track.coverUrl) || playerCover?.src || '';
+                cover.src = proxify(track.coverUrl) || '';
 
                 const meta = document.createElement('div');
                 meta.className = 'flex-1 min-w-0';
@@ -2375,7 +2632,7 @@
                 title.innerText = track.name || '';
                 const sub = document.createElement('div');
                 sub.className = 'text-xs text-material-text-secondary truncate';
-                const platformTag = track.platform === 'local' ? '本地库' : (track.platform || '');
+                const platformTag = platformLabel(track.platform);
                 sub.innerText = `${track.artist || ''}${track.album ? ' · ' + track.album : ''}${platformTag ? ' · ' + platformTag : ''}`;
                 meta.appendChild(title);
                 meta.appendChild(sub);
@@ -4925,6 +5182,7 @@
         updateUserUI();
         initVolume();
         initPlayerPageCarousel();
+        initMobilePlayerPageFullscreen();
         initSidebarToggle();
         initRecommendations();
         initLocalPlaylists();
@@ -4942,6 +5200,7 @@
         }
         refreshCurrentUser();
         updatePlayerPageUI();
+        updatePlayerBarUI();
         updateProgressUI();
     </script>
 </body>

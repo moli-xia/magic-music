@@ -127,7 +127,7 @@ docker run -d \
 
 ```bash
 docker build -t superneed/magic-music:latest .
-docker login -u superneed
+echo "$DOCKERHUB_TOKEN" | docker login -u superneed --password-stdin
 docker push superneed/magic-music:latest
 ```
 
