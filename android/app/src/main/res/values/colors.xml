@@ -1,0 +1,7 @@
+<resources>
+  <color name="status_bar_color">#FFFFFF</color>
+  <color name="navigation_bar_color">#FFFFFF</color>
+  <color name="ic_launcher_bg">#111827</color>
+  <color name="ic_launcher_fg">#FFFFFF</color>
+</resources>
+
