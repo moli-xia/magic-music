@@ -1163,6 +1163,34 @@ async function handleApi(req, res) {
     return true
   }
 
+  if (pathname === '/api/user/playlists/remove' && method === 'POST') {
+    const userId = requireUser(req, res)
+    if (!userId) return true
+    const body = await jsonBody()
+    const playlistId = String(body.playlistId || '')
+    const track = sanitizeTrack(body.track)
+    if (!playlistId || !track) {
+      sendJson(res, 400, { error: '参数错误' })
+      return true
+    }
+    const list = Array.isArray(db.playlistsByUser[userId]) ? db.playlistsByUser[userId] : []
+    const idx = list.findIndex(p => p && String(p.id) === playlistId)
+    if (idx < 0) {
+      sendJson(res, 404, { error: '歌单不存在' })
+      return true
+    }
+    const pl = list[idx]
+    const tracks = Array.isArray(pl.tracks) ? pl.tracks : []
+    const key = `${track.platform}:${track.id}`
+    const tIdx = tracks.findIndex(t => t && `${t.platform}:${t.id}` === key)
+    if (tIdx >= 0) tracks.splice(tIdx, 1)
+    list[idx] = { ...pl, tracks }
+    db.playlistsByUser[userId] = list
+    saveDb(db)
+    sendJson(res, 200, { ok: true, playlist: list[idx] })
+    return true
+  }
+
   if (pathname === '/api/user/likes' && method === 'GET') {
     const userId = requireUser(req, res)
     if (!userId) return true
@@ -1588,4 +1616,5 @@ http
   })
   .listen(PORT, '0.0.0.0', () => {
     console.log(`Magic Music server running at http://localhost:${PORT}`)
+    ensureKugouApiReady().catch(() => {})
   })

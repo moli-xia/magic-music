@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>魔力音乐</title>
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%2064%2064%27%3E%3Cdefs%3E%3ClinearGradient%20id%3D%27g%27%20x1%3D%270%27%20y1%3D%270%27%20x2%3D%271%27%20y2%3D%271%27%3E%3Cstop%20stop-color%3D%27%236200EA%27/%3E%3Cstop%20offset%3D%271%27%20stop-color%3D%27%23D500F9%27/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect%20width%3D%2764%27%20height%3D%2764%27%20rx%3D%2716%27%20fill%3D%27url(%23g)%27/%3E%3Cpath%20d%3D%27M40%2018v22.2c0%203.9-3.6%207-8%207s-8-3.1-8-7%203.6-7%208-7c1.7%200%203.2.4%204.6%201.1V23.2L24%2026.1v14.1c0%203.9-3.6%207-8%207s-8-3.1-8-7%203.6-7%208-7c1.7%200%203.2.4%204.6%201.1V20.8L40%2018z%27%20fill%3D%27%23ffffff%27/%3E%3C/svg%3E">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%2064%2064%27%3E%3Cdefs%3E%3ClinearGradient%20id%3D%27g%27%20x1%3D%270%27%20y1%3D%270%27%20x2%3D%271%27%20y2%3D%271%27%3E%3Cstop%20stop-color%3D%27%237B1FA2%27/%3E%3Cstop%20offset%3D%271%27%20stop-color%3D%27%23E040FB%27/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect%20width%3D%2764%27%20height%3D%2764%27%20rx%3D%2716%27%20fill%3D%27url(%23g)%27/%3E%3Cpath%20d%3D%27M16%2048V20l16%2012%2016-12v28%27%20stroke%3D%27white%27%20stroke-width%3D%276%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%20fill%3D%27none%27/%3E%3C/svg%3E">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
@@ -376,6 +376,45 @@
             font-weight: 700;
         }
 
+        body.mm-route-player #player-progress-row {
+            display: flex !important;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            width: 100%;
+            gap: 0 !important;
+        }
+
+        body.mm-route-player #player-time-current,
+        body.mm-route-player #player-time-total {
+            display: none !important;
+        }
+
+        body.mm-route-player #player-progress {
+            height: 3px;
+            border-radius: 0;
+            padding-top: 0;
+            padding-bottom: 0;
+        }
+
+        body.mm-route-player #player-progress-fill {
+            height: 3px;
+            border-radius: 0;
+        }
+
+        body.mm-route-player #player-progress-knob {
+            display: none !important;
+        }
+
+        body.mm-route-player.mm-seeking #player-progress-knob {
+            display: block !important;
+            width: 12px;
+            height: 12px;
+            opacity: 1 !important;
+            background-color: #7928ca !important;
+        }
+
         @media (max-width: 767px) {
             nav.md\:hidden {
                 position: fixed !important;
@@ -455,9 +494,50 @@
                 display: none !important;
             }
 
+            body.mm-player-page-open #player-controls {
+                max-width: none !important;
+                width: 100% !important;
+                padding-left: 14px;
+                padding-right: 14px;
+            }
+
+            body.mm-player-page-open #player-progress-row {
+                display: flex !important;
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                width: 100%;
+                gap: 0 !important;
+            }
+
+            body.mm-player-page-open #player-progress {
+                height: 3px;
+                border-radius: 0;
+                padding-top: 0;
+                padding-bottom: 0;
+            }
+
+            body.mm-player-page-open #player-progress-fill {
+                height: 3px;
+                border-radius: 0;
+            }
+
+            body.mm-player-page-open #player-progress-knob {
+                display: none !important;
+            }
+
             body.mm-player-page-open #player-time-current,
             body.mm-player-page-open #player-time-total {
+                display: none !important;
+            }
+
+            body.mm-player-page-open.mm-seeking #player-progress-knob {
                 display: block !important;
+                width: 12px;
+                height: 12px;
+                opacity: 1 !important;
+                background-color: #7928ca !important;
             }
         }
 
@@ -517,9 +597,281 @@
         #sidebar-toggle-btn-sidebar {
             display: none !important;
         }
+
+        /* App Loader */
+        #app-loader {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: #121212;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.5s ease-out;
+        }
+        .loader-spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(187, 134, 252, 0.3);
+            border-radius: 50%;
+            border-top-color: #bb86fc;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .home-radio-card {
+            --mm-c1: rgba(124, 58, 237, 0.95);
+            --mm-c2: rgba(236, 72, 153, 0.95);
+            --mm-c3: rgba(99, 102, 241, 0.75);
+            position: relative;
+            overflow: hidden;
+            border-radius: 18px;
+            color: rgba(255, 255, 255, 0.96);
+            background:
+                linear-gradient(180deg, rgba(17, 24, 39, 0.72), rgba(17, 24, 39, 0.46));
+            transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+            transform: translateZ(0);
+            will-change: transform;
+        }
+        .home-radio-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+            border-color: rgba(255, 255, 255, 0.18);
+        }
+        .home-radio-card:active {
+            transform: translateY(-1px) scale(0.985);
+        }
+        .home-radio-card::before {
+            content: '';
+            position: absolute;
+            inset: -40%;
+            background:
+                radial-gradient(closest-side at 25% 25%, var(--mm-c1), transparent 60%),
+                radial-gradient(closest-side at 75% 30%, var(--mm-c2), transparent 62%),
+                radial-gradient(closest-side at 50% 85%, var(--mm-c3), transparent 65%);
+            opacity: 0.85;
+            filter: blur(22px);
+            transform: translate3d(0, 0, 0) scale(1.05);
+            animation: mmRadioFloat 7s ease-in-out infinite;
+        }
+        .home-radio-card::after {
+            content: '';
+            position: absolute;
+            inset: -60%;
+            background:
+                linear-gradient(120deg, transparent 0%, rgba(255, 255, 255, 0.0) 25%, rgba(255, 255, 255, 0.28) 40%, rgba(255, 255, 255, 0.0) 58%, transparent 100%),
+                linear-gradient(120deg, transparent 0%, rgba(255, 255, 255, 0.0) 35%, rgba(255, 255, 255, 0.16) 48%, rgba(255, 255, 255, 0.0) 62%, transparent 100%);
+            opacity: 0.85;
+            transform: translate3d(-30%, 0, 0) rotate(0.001deg);
+            animation: mmRadioLightFlow 3.8s linear infinite;
+        }
+        @keyframes mmRadioFloat {
+            0% { transform: translate3d(-2%, -1%, 0) scale(1.06); }
+            50% { transform: translate3d(2%, 1.5%, 0) scale(1.02); }
+            100% { transform: translate3d(-2%, -1%, 0) scale(1.06); }
+        }
+        @keyframes mmRadioLightFlow {
+            0% { transform: translate3d(-45%, -6%, 0) rotate(0.001deg); }
+            100% { transform: translate3d(45%, 6%, 0) rotate(0.001deg); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .home-radio-card::before,
+            .home-radio-card::after {
+                animation: none;
+            }
+            .home-radio-card {
+                transition: none;
+            }
+        }
+        .home-radio-card-inner {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 122px;
+        }
+        @media (min-width: 768px) {
+            .home-radio-card-inner {
+                min-height: 150px;
+            }
+        }
+        .home-radio-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            width: max-content;
+            padding: 6px 10px;
+            border-radius: 9999px;
+            background: rgba(0, 0, 0, 0.18);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            color: rgba(255, 255, 255, 0.92);
+            font-size: 12px;
+            line-height: 1;
+        }
+        .home-radio-title {
+            color: inherit;
+            letter-spacing: 0.2px;
+        }
+        .home-radio-sub {
+            color: rgba(255, 255, 255, 0.78);
+        }
+        .home-radio-cta {
+            width: 44px;
+            height: 44px;
+            border-radius: 9999px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.14);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
+            transition: transform 180ms ease, background-color 180ms ease;
+        }
+        .home-radio-card:hover .home-radio-cta {
+            transform: translateY(-1px) scale(1.03);
+            background: rgba(255, 255, 255, 0.18);
+        }
+        :root.light .home-radio-card {
+            box-shadow: 0 16px 40px rgba(124, 58, 237, 0.15);
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.1));
+            border-color: rgba(255, 255, 255, 0.4);
+            color: #000;
+        }
+        :root.light .home-radio-card .home-radio-sub {
+            color: rgba(0, 0, 0, 0.7);
+        }
+        :root.light .home-radio-card .home-radio-cta {
+             background: rgba(0, 0, 0, 0.08);
+             border-color: rgba(0, 0, 0, 0.1);
+             color: #000;
+        }
+        :root.light .home-radio-card .home-radio-cta span {
+             color: #000;
+        }
+        :root.light .home-radio-card:hover .home-radio-cta {
+             background: rgba(0, 0, 0, 0.12);
+        }
+        :root.light .home-radio-visualizer span {
+            background: #000;
+        }
+        
+        .mm-player-visualizer {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            height: 32px;
+            margin-top: 24px;
+            margin-bottom: 4px;
+            opacity: 0.9;
+        }
+        .mm-player-visualizer .bar {
+            width: 4px;
+            background: rgb(var(--primary-color));
+            border-radius: 99px;
+            animation: mmPlayerEq 1s ease-in-out infinite;
+            height: 6px;
+            min-height: 6px;
+        }
+        .mm-player-visualizer .bar:nth-child(odd) { background: rgb(var(--primary-color)); }
+        .mm-player-visualizer .bar:nth-child(even) { background: rgb(var(--primary-color) / 0.6); }
+        
+        .mm-player-visualizer .bar:nth-child(1)  { animation-duration: 1.0s; animation-delay: 0.1s; }
+        .mm-player-visualizer .bar:nth-child(2)  { animation-duration: 1.2s; animation-delay: 0.2s; }
+        .mm-player-visualizer .bar:nth-child(3)  { animation-duration: 0.8s; animation-delay: 0.3s; }
+        .mm-player-visualizer .bar:nth-child(4)  { animation-duration: 1.1s; animation-delay: 0.0s; }
+        .mm-player-visualizer .bar:nth-child(5)  { animation-duration: 0.9s; animation-delay: 0.4s; }
+        .mm-player-visualizer .bar:nth-child(6)  { animation-duration: 1.3s; animation-delay: 0.2s; }
+        .mm-player-visualizer .bar:nth-child(7)  { animation-duration: 1.0s; animation-delay: 0.5s; }
+        .mm-player-visualizer .bar:nth-child(8)  { animation-duration: 1.2s; animation-delay: 0.1s; }
+        .mm-player-visualizer .bar:nth-child(9)  { animation-duration: 0.9s; animation-delay: 0.3s; }
+        .mm-player-visualizer .bar:nth-child(10) { animation-duration: 1.1s; animation-delay: 0.4s; }
+        .mm-player-visualizer .bar:nth-child(11) { animation-duration: 0.8s; animation-delay: 0.2s; }
+        .mm-player-visualizer .bar:nth-child(12) { animation-duration: 1.0s; animation-delay: 0.0s; }
+
+        @keyframes mmPlayerEq {
+            0%, 100% { height: 6px; }
+            50% { height: 100%; }
+        }
+        .home-radio-card-guess {
+            --mm-c1: rgba(124, 58, 237, 0.95);
+            --mm-c2: rgba(236, 72, 153, 0.9);
+            --mm-c3: rgba(168, 85, 247, 0.75);
+        }
+        .home-radio-card-daily {
+            --mm-c1: rgba(14, 165, 233, 0.95);
+            --mm-c2: rgba(99, 102, 241, 0.9);
+            --mm-c3: rgba(34, 211, 238, 0.75);
+        }
+
+        .home-radio-visualizer {
+            display: flex;
+            align-items: flex-end;
+            gap: 4px;
+            height: 28px;
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            z-index: 5;
+            opacity: 0.7;
+            pointer-events: none;
+        }
+        .home-radio-visualizer span {
+            width: 5px;
+            background: #fff;
+            border-radius: 99px;
+            animation: mmEqualizer 1s ease-in-out infinite;
+            transform-origin: bottom;
+        }
+        .home-radio-visualizer span:nth-child(1) { height: 40%; animation-duration: 0.8s; animation-delay: 0.1s; }
+        .home-radio-visualizer span:nth-child(2) { height: 80%; animation-duration: 1.1s; animation-delay: 0.2s; }
+        .home-radio-visualizer span:nth-child(3) { height: 50%; animation-duration: 1.3s; animation-delay: 0.0s; }
+        .home-radio-visualizer span:nth-child(4) { height: 90%; animation-duration: 0.9s; animation-delay: 0.3s; }
+        @keyframes mmEqualizer {
+            0%, 100% { transform: scaleY(0.4); opacity: 0.8; }
+            50% { transform: scaleY(1); opacity: 1; }
+        }
+
+        /* Copyright Modal */
+        #copyright-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 9990;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
+        }
+        #copyright-modal.open {
+            display: flex;
+        }
     </style>
 </head>
 <body class="bg-material-bg text-material-text h-screen flex flex-col md:flex-row overflow-hidden transition-colors duration-300">
+    <div id="app-loader">
+        <div class="loader-spinner"></div>
+    </div>
+    <script>
+        (() => {
+            const loader = document.getElementById('app-loader');
+            if (!loader) return;
+            const hide = () => {
+                if (!document.getElementById('app-loader')) return;
+                loader.style.opacity = '0';
+                setTimeout(() => loader.remove(), 500);
+            };
+            window.addEventListener('load', () => setTimeout(hide, 800));
+            setTimeout(hide, 2500);
+        })();
+    </script>
 
     <!-- Desktop Sidebar (Hidden on Mobile) -->
     <aside id="desktop-sidebar" class="hidden md:flex flex-col w-60 bg-material-surface h-full border-r border-material-border transition-colors duration-300 select-none">
@@ -529,12 +881,12 @@
                     <svg width="32" height="32" viewBox="0 0 64 64" aria-hidden="true" class="block">
                         <defs>
                             <linearGradient id="mmLogoGrad" x1="0" y1="0" x2="1" y2="1">
-                                <stop stop-color="#6200EA"></stop>
-                                <stop offset="1" stop-color="#D500F9"></stop>
+                                <stop stop-color="#7B1FA2"></stop>
+                                <stop offset="1" stop-color="#E040FB"></stop>
                             </linearGradient>
                         </defs>
                         <rect width="64" height="64" rx="16" fill="url(#mmLogoGrad)"></rect>
-                        <path d="M40 18v22.2c0 3.9-3.6 7-8 7s-8-3.1-8-7 3.6-7 8-7c1.7 0 3.2.4 4.6 1.1V23.2L24 26.1v14.1c0 3.9-3.6 7-8 7s-8-3.1-8-7 3.6-7 8-7c1.7 0 3.2.4 4.6 1.1V20.8L40 18z" fill="#FFFFFF"></path>
+                        <path d="M16 48V20l16 12 16-12v28" stroke="white" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none"></path>
                     </svg>
                 </div>
                 <h1 class="text-lg font-bold tracking-tight text-material-text truncate">魔力音乐</h1>
@@ -587,21 +939,6 @@
                     </a>
                 </div>
             </div>
-
-            <!-- Group: Created Playlists -->
-            <div>
-            <div class="flex items-center justify-between px-3 mb-2">
-                <p class="text-xs text-material-text-secondary font-medium group-hover:text-material-text transition-colors">创建的歌单</p>
-                <button id="create-playlist-btn" class="material-icons text-[16px] text-material-text-secondary hover:text-material-text" type="button" title="创建歌单">add</button>
-            </div>
-            <div id="created-playlists-list" class="space-y-1"></div>
-            <div id="sidebar-create-playlist-form" class="hidden px-3 mt-2">
-                <input id="sidebar-playlist-name" type="text" placeholder="输入歌单名称" class="w-full text-sm rounded-md px-3 py-2 bg-material-text/5 text-material-text placeholder-material-text-secondary/70 focus:outline-none focus:bg-material-text/10">
-                <div class="flex items-center gap-2 mt-2">
-                    <button id="sidebar-playlist-create-confirm" type="button" class="flex-1 text-xs px-3 py-2 rounded-full bg-material-primary text-material-on-primary hover:bg-material-primary/80 transition">创建</button>
-                    <button id="sidebar-playlist-create-cancel" type="button" class="flex-1 text-xs px-3 py-2 rounded-full bg-material-text/5 text-material-text-secondary hover:bg-material-text/10 hover:text-material-text transition">取消</button>
-                </div>
-            </div>
         </nav>
         
         
@@ -644,8 +981,8 @@
                 <button id="theme-toggle-desktop" class="text-material-text-secondary hover:text-material-text transition p-2 rounded-full hover:bg-material-text/5" title="Toggle Theme">
                     <span class="material-icons">dark_mode</span>
                 </button>
-                <button class="text-material-text-secondary hover:text-material-text transition p-2 rounded-full hover:bg-material-text/5" title="Settings">
-                    <span class="material-icons">settings</span>
+                <button id="copyright-btn" class="text-material-text-secondary hover:text-material-text transition p-2 rounded-full hover:bg-material-text/5" title="版权声明">
+                    <span class="material-icons">info</span>
                 </button>
             </div>
         </header>
@@ -666,12 +1003,12 @@
                         <svg width="32" height="32" viewBox="0 0 64 64" aria-hidden="true" class="block">
                             <defs>
                                 <linearGradient id="mmLogoGradMobile" x1="0" y1="0" x2="1" y2="1">
-                                    <stop stop-color="#6200EA"></stop>
-                                    <stop offset="1" stop-color="#D500F9"></stop>
+                                    <stop stop-color="#7B1FA2"></stop>
+                                    <stop offset="1" stop-color="#E040FB"></stop>
                                 </linearGradient>
                             </defs>
                             <rect width="64" height="64" rx="16" fill="url(#mmLogoGradMobile)"></rect>
-                            <path d="M40 18v22.2c0 3.9-3.6 7-8 7s-8-3.1-8-7 3.6-7 8-7c1.7 0 3.2.4 4.6 1.1V23.2L24 26.1v14.1c0 3.9-3.6 7-8 7s-8-3.1-8-7 3.6-7 8-7c1.7 0 3.2.4 4.6 1.1V20.8L40 18z" fill="#FFFFFF"></path>
+                            <path d="M16 48V20l16 12 16-12v28" stroke="white" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none"></path>
                         </svg>
                     </div>
                     <span class="font-bold text-lg text-material-text">魔力音乐</span>
@@ -717,7 +1054,6 @@
                                 </div>
                                 <div class="min-w-0">
                                     <div id="user-center-name" class="text-sm font-medium text-material-text truncate">未登录</div>
-                                    <div id="user-playlists-summary" class="text-xs text-material-text-secondary truncate">本地歌单：0</div>
                                 </div>
                             </div>
                             <div class="flex items-center gap-2 shrink-0">
@@ -756,30 +1092,6 @@
                     </div>
                     <div id="login-after-auth" class="hidden space-y-4">
                         <div class="bg-material-surface/50 border border-material-border/60 rounded-xl p-4">
-                            <div class="flex items-center justify-between gap-3">
-                                <div class="flex items-center gap-3 min-w-0">
-                                    <div class="w-10 h-10 rounded-full bg-material-text/10 flex items-center justify-center shrink-0">
-                                        <span class="material-icons text-material-text-secondary">queue_music</span>
-                                    </div>
-                                    <div class="min-w-0">
-                                        <div class="text-sm font-medium text-material-text truncate">歌单管理</div>
-                                        <div class="text-xs text-material-text-secondary truncate">创建和管理你的歌单</div>
-                                    </div>
-                                </div>
-                                <div class="flex items-center gap-2 shrink-0">
-                                    <button id="user-create-playlist-btn" type="button" class="text-xs px-3 py-2 rounded-full bg-material-primary/10 text-material-primary hover:bg-material-primary/15 transition">创建歌单</button>
-                                    <button id="user-add-current-to-playlist-btn" type="button" class="text-xs px-3 py-2 rounded-full bg-material-text/5 text-material-text-secondary hover:bg-material-text/10 hover:text-material-text transition">加入当前播放</button>
-                                </div>
-                            </div>
-                            <div id="user-create-playlist-form" class="hidden mt-3">
-                                <input id="user-playlist-name" type="text" placeholder="输入歌单名称" class="w-full text-sm rounded-md px-3 py-2 bg-material-text/5 text-material-text placeholder-material-text-secondary/70 focus:outline-none focus:bg-material-text/10">
-                                <div class="flex items-center gap-2 mt-2">
-                                    <button id="user-playlist-create-confirm" type="button" class="flex-1 text-xs px-3 py-2 rounded-full bg-material-primary text-material-on-primary hover:bg-material-primary/80 transition">创建</button>
-                                    <button id="user-playlist-create-cancel" type="button" class="flex-1 text-xs px-3 py-2 rounded-full bg-material-text/5 text-material-text-secondary hover:bg-material-text/10 hover:text-material-text transition">取消</button>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="bg-material-surface/50 border border-material-border/60 rounded-xl p-4">
                             <div class="flex items-center gap-3">
                                 <div class="w-10 h-10 rounded-full bg-material-text/10 flex items-center justify-center shrink-0">
                                     <span class="material-icons text-material-text-secondary">person</span>
@@ -790,45 +1102,45 @@
                                 </div>
                             </div>
                             <div class="mt-3 grid grid-cols-3 gap-2">
-                                <a href="/login" class="text-xs px-3 py-2 rounded-full bg-material-text/5 text-material-text-secondary hover:bg-material-text/10 hover:text-material-text transition flex items-center justify-center">我的歌单</a>
+                                <a href="/favorites" class="text-xs px-3 py-2 rounded-full bg-material-text/5 text-material-text-secondary hover:bg-material-text/10 hover:text-material-text transition flex items-center justify-center">我喜欢的</a>
                                 <a href="/downloads" class="text-xs px-3 py-2 rounded-full bg-material-text/5 text-material-text-secondary hover:bg-material-text/10 hover:text-material-text transition flex items-center justify-center">下载记录</a>
                                 <a href="/recent" class="text-xs px-3 py-2 rounded-full bg-material-text/5 text-material-text-secondary hover:bg-material-text/10 hover:text-material-text transition flex items-center justify-center">最近播放</a>
                             </div>
-                        </div>
-                        <div class="bg-material-surface/50 border border-material-border/60 rounded-xl p-4">
-                            <div class="flex items-center justify-between gap-3">
-                                <div class="flex items-center gap-3 min-w-0">
-                                    <div class="w-10 h-10 rounded-full bg-material-text/10 flex items-center justify-center shrink-0">
-                                        <span class="material-icons text-material-text-secondary">queue_music</span>
-                                    </div>
-                                    <div class="min-w-0">
-                                        <div class="text-sm font-medium text-material-text truncate">我的歌单</div>
-                                        <div class="text-xs text-material-text-secondary truncate">点击歌单可直接播放</div>
-                                    </div>
-                                </div>
-                                <a href="/playlist-square" class="text-xs px-3 py-2 rounded-full bg-material-text/5 text-material-text-secondary hover:bg-material-text/10 hover:text-material-text transition">发现歌单</a>
-                            </div>
-                            <div id="user-created-playlists-list" class="mt-3 space-y-1"></div>
                         </div>
                     </div>
                 </div>
             </section>
             
             <div id="recommend-page-section">
-            <section class="mb-8 mt-2">
-                <div id="home-slideshow" class="relative w-full h-48 md:h-64 rounded-xl overflow-hidden shadow-lg group cursor-pointer">
-                    <img id="home-slide-img" src="https://images.unsplash.com/photo-1493225255756-d9584f8606e9?q=80&w=1200&h=400&fit=crop" class="w-full h-full object-cover transition duration-500 group-hover:scale-105" alt="Banner">
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-6">
-                         <span class="bg-material-primary text-white text-xs px-2 py-1 rounded w-fit mb-2 font-bold">首页推荐</span>
+            <section class="mb-7 mt-2 grid grid-cols-2 md:grid-cols-2 gap-3 md:gap-4">
+                <button id="home-card-guess" type="button" aria-label="猜你喜欢电台，点击即播" class="home-radio-card home-radio-card-guess text-left border border-material-border/60 px-4 py-4 md:px-5 md:py-5">
+                    <div class="home-radio-card-inner">
+                        <div class="flex items-start justify-between gap-3 relative z-10">
+                            <div class="min-w-0">
+                                <div class="home-radio-title text-base md:text-xl font-bold truncate">猜你喜欢</div>
+                                <div class="mt-1 home-radio-sub text-[12px] md:text-sm line-clamp-2" id="home-card-guess-sub">加载中…</div>
+                            </div>
+                            <div class="home-radio-cta shrink-0" aria-hidden="true">
+                                <span class="material-icons text-white text-[22px]">play_arrow</span>
+                            </div>
+                        </div>
+                        <div class="home-radio-visualizer"><span></span><span></span><span></span><span></span></div>
                     </div>
-                    <button id="home-slide-prev" type="button" class="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/20 hover:bg-white/40 backdrop-blur-md rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition">
-                        <span class="material-icons text-lg">chevron_left</span>
-                    </button>
-                    <button id="home-slide-next" type="button" class="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/20 hover:bg-white/40 backdrop-blur-md rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition">
-                        <span class="material-icons text-lg">chevron_right</span>
-                    </button>
-                    <div id="home-slide-dots" class="absolute bottom-4 right-6 flex gap-2"></div>
-                </div>
+                </button>
+                <button id="home-card-daily" type="button" aria-label="每日推荐电台，点击即播" class="home-radio-card home-radio-card-daily text-left border border-material-border/60 px-4 py-4 md:px-5 md:py-5">
+                    <div class="home-radio-card-inner">
+                        <div class="flex items-start justify-between gap-3 relative z-10">
+                            <div class="min-w-0">
+                                <div class="home-radio-title text-base md:text-xl font-bold truncate">每日推荐</div>
+                                <div class="mt-1 home-radio-sub text-[12px] md:text-sm line-clamp-2" id="home-card-daily-sub">加载中…</div>
+                            </div>
+                            <div class="home-radio-cta shrink-0" aria-hidden="true">
+                                <span class="material-icons text-white text-[22px]">play_arrow</span>
+                            </div>
+                        </div>
+                        <div class="home-radio-visualizer"><span></span><span></span><span></span><span></span></div>
+                    </div>
+                </button>
             </section>
 
             <section class="mb-8">
@@ -978,8 +1290,16 @@
                                                 </div>
                                                 <div class="mm-vinyl-hole"></div>
                                             </div>
+                                            
+                                            <!-- Volume Visualizer -->
+                                            <div class="mm-player-visualizer">
+                                                <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
+                                                <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
+                                                <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
+                                            </div>
+
                                             <!-- Single line lyric display -->
-                                            <div id="player-page-single-lyric" class="mt-6 md:mt-8 text-center text-lg md:text-3xl font-bold min-h-[3rem] px-4 line-clamp-2 transition-opacity duration-300"></div>
+                                            <div id="player-page-single-lyric" class="mt-6 md:mt-8 text-center text-3xl md:text-4xl font-bold min-h-[3rem] px-4 line-clamp-2 transition-opacity duration-300"></div>
                                         </div>
                                     </div>
                                     <div class="w-full shrink-0">
@@ -1022,13 +1342,10 @@
                 <button id="player-download-btn" class="w-8 h-8 flex items-center justify-center rounded-full text-material-text-secondary hover:text-material-text hover:bg-material-text/5 transition hidden sm:flex shrink-0" title="下载">
                     <span class="material-icons text-xl">download</span>
                 </button>
-                <button id="player-add-to-playlist-btn" class="w-8 h-8 flex items-center justify-center rounded-full text-material-text-secondary hover:text-material-primary hover:bg-material-text/5 transition hidden sm:flex shrink-0" type="button" title="加入歌单">
-                    <span class="material-icons text-xl">playlist_add</span>
-                </button>
             </div>
 
             <!-- Player Controls (Center) -->
-            <div class="flex flex-col items-center justify-center flex-1 max-w-[40%] md:max-w-[35%] shrink-0 px-2">
+            <div id="player-controls" class="flex flex-col items-center justify-center flex-1 max-w-[40%] md:max-w-[35%] shrink-0 px-2">
                 <div class="flex items-center justify-center gap-2 md:gap-6 mb-1">
                     <button id="player-shuffle-btn" class="w-8 h-8 flex items-center justify-center rounded-full text-material-text-secondary hover:text-material-text hover:bg-material-text/5 transition hidden md:flex" title="Shuffle" type="button">
                         <span class="material-icons text-xl">shuffle</span>
@@ -1046,7 +1363,7 @@
                         <span class="material-icons text-xl">repeat</span>
                     </button>
                 </div>
-                <div class="w-full flex items-center gap-3 text-xs text-material-text-secondary">
+                <div id="player-progress-row" class="hidden w-full items-center gap-3 text-xs text-material-text-secondary">
                     <span id="player-time-current" class="hidden sm:block w-8 text-right font-mono">0:00</span>
                     <div id="player-progress" class="flex-1 h-1 bg-material-text/10 rounded-full cursor-pointer group relative py-1">
                         <div class="absolute top-1/2 -translate-y-1/2 left-0 w-full h-1 bg-transparent"></div> <!-- Hit area -->
@@ -1059,10 +1376,13 @@
 
             <!-- Volume/Extra (Right) -->
             <div class="flex items-center justify-end gap-2 md:gap-4 flex-1 min-w-0">
-                <button id="player-queue-btn" class="w-8 h-8 flex items-center justify-center rounded-full text-material-text-secondary hover:text-material-text hover:bg-material-text/5 transition hidden sm:flex" title="播放列表" type="button">
+                <button id="player-add-to-playlist-btn" class="w-8 h-8 flex sm:hidden items-center justify-center rounded-full text-material-text-secondary hover:text-material-primary hover:bg-material-text/5 transition shrink-0" type="button" title="喜欢">
+                    <span class="material-icons text-xl">favorite_border</span>
+                </button>
+                <button id="player-queue-btn" class="w-8 h-8 flex items-center justify-center rounded-full text-material-text-secondary hover:text-material-text hover:bg-material-text/5 transition" title="播放列表" type="button">
                     <span class="material-icons text-xl">queue_music</span>
                 </button>
-                <div class="flex items-center gap-2 w-20 sm:w-24 lg:w-32 shrink-0 group">
+                <div class="hidden md:flex items-center gap-2 w-20 sm:w-24 lg:w-32 shrink-0 group">
                     <button id="player-volume-btn" class="w-8 h-8 flex items-center justify-center rounded-full text-material-text-secondary hover:text-material-text transition" type="button" title="静音/取消静音">
                         <span class="material-icons text-xl">volume_up</span>
                     </button>
@@ -1109,31 +1429,6 @@
                     </div>
                     <div id="queue-modal-list" class="max-h-[60vh] overflow-auto divide-y divide-material-border/40"></div>
                     <div id="queue-modal-empty" class="hidden px-4 py-6 text-sm text-material-text-secondary">播放列表为空</div>
-                </div>
-            </div>
-        </div>
-
-        <div id="playlist-select-modal" class="hidden fixed inset-0 z-50">
-            <div id="playlist-select-backdrop" class="absolute inset-0 bg-black/45 backdrop-blur-sm"></div>
-            <div class="relative w-full h-full flex items-center justify-center p-4">
-                <div class="w-full max-w-md md:max-w-lg mm-glass border border-material-border/60 rounded-2xl overflow-hidden shadow-2xl">
-                    <div class="flex items-center justify-between px-4 py-3 border-b border-material-border/50">
-                        <div class="flex items-center gap-2">
-                            <span class="material-icons text-material-primary">playlist_add</span>
-                            <div class="text-sm font-semibold text-material-text">选择歌单</div>
-                        </div>
-                        <button id="playlist-select-close" type="button" class="w-9 h-9 rounded-full bg-material-text/5 hover:bg-material-text/10 text-material-text-secondary hover:text-material-text transition flex items-center justify-center" title="关闭">
-                            <span class="material-icons text-xl">close</span>
-                        </button>
-                    </div>
-                    <div class="px-4 py-3 border-b border-material-border/40">
-                        <div class="flex items-center gap-2">
-                            <input id="playlist-select-create-name" type="text" placeholder="新歌单名称" class="flex-1 text-sm rounded-md px-3 py-2 bg-material-text/5 text-material-text placeholder-material-text-secondary/70 focus:outline-none focus:bg-material-text/10">
-                            <button id="playlist-select-create-btn" type="button" class="text-xs px-3 py-2 rounded-full bg-material-primary text-material-on-primary hover:bg-material-primary/80 transition">创建</button>
-                        </div>
-                    </div>
-                    <div id="playlist-select-list" class="max-h-[60vh] overflow-auto divide-y divide-material-border/40"></div>
-                    <div id="playlist-select-empty" class="hidden px-4 py-6 text-sm text-material-text-secondary">还没有歌单</div>
                 </div>
             </div>
         </div>
@@ -1292,12 +1587,14 @@
         let currentTrack = null;
         let playQueue = [];
         let queueIndex = -1;
+        let defaultTrackPreloaded = false;
 
         const PLAY_MODE_KEY = 'magicMusic_playMode_v1';
         const SHUFFLE_KEY = 'magicMusic_shuffle_v1';
         const LIKED_KEY = 'magicMusic_liked_v1';
         const DOWNLOADS_KEY = 'magicMusic_downloads_v1';
         const RECENT_KEY = 'magicMusic_recent_v1';
+        const DEFAULT_PLAYLIST_NAME = '我喜欢';
         let playMode = 'order';
         let isShuffle = false;
         let likedTracks = [];
@@ -1305,6 +1602,7 @@
         let recentTracks = [];
 
         let currentUser = null;
+        let defaultServerPlaylistId = '';
         let authMode = 'login';
         let playlistEditing = null;
         let playlistEditingName = '';
@@ -1480,6 +1778,54 @@
             if (icon) icon.innerText = isPlaying ? 'pause' : 'play_arrow';
         }
 
+        function setInlinePlayButtonIcon(btn, isPlaying) {
+            if (!btn) return;
+            const icon = btn.querySelector('.material-icons');
+            if (icon) icon.innerText = isPlaying ? 'pause' : 'play_arrow';
+        }
+
+        function updateInlinePlayButtonsUI() {
+            const curKey = currentTrack ? trackKey(currentTrack) : '';
+            const playing = !!(audio.src && !audio.paused);
+            const btns = document.querySelectorAll('button[data-mm-play-btn="1"]');
+            btns.forEach((btn) => {
+                const k = btn.getAttribute('data-track-key') || '';
+                setInlinePlayButtonIcon(btn, !!(playing && curKey && k && k === curKey));
+            });
+        }
+
+        function setupTrackPlayButton(btn, track, queueList, queueIdx) {
+            if (!btn) return;
+            btn.setAttribute('data-mm-play-btn', '1');
+            btn.setAttribute('data-track-key', trackKey(track) || '');
+            setInlinePlayButtonIcon(btn, !!(currentTrack && trackKey(track) === trackKey(currentTrack) && audio.src && !audio.paused));
+
+            btn.addEventListener('click', async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+
+                const same = !!(currentTrack && trackKey(track) === trackKey(currentTrack));
+                if (same && audio.src) {
+                    try {
+                        if (audio.paused) await audio.play();
+                        else audio.pause();
+                    } catch {}
+                    updateInlinePlayButtonsUI();
+                    return;
+                }
+
+                setQueue(queueList, queueIdx);
+                try {
+                    await playTrack(track);
+                } catch (err) {
+                    const msg = err instanceof Error && err.message ? err.message : '后端未启动或资源不可用';
+                    alert(`播放失败：${msg}`);
+                } finally {
+                    updateInlinePlayButtonsUI();
+                }
+            });
+        }
+
         let lastProgressTimeText = '';
         let lastProgressTotalText = '';
         let lastProgressRatio = -1;
@@ -1488,13 +1834,17 @@
         let lastPlayerPageRatio = -1;
         let lastLyricsSyncAt = 0;
         let lastUpdateUI = 0;
+        let seekDragging = false;
+        let seekDragRatio = 0;
+        let seekDragWasPlaying = false;
 
         function updateProgressUI() {
             if (Date.now() - lastUpdateUI < 33) return;
             lastUpdateUI = Date.now();
 
             const dur = Number.isFinite(audio.duration) ? audio.duration : 0;
-            const cur = Number.isFinite(audio.currentTime) ? audio.currentTime : 0;
+            let cur = Number.isFinite(audio.currentTime) ? audio.currentTime : 0;
+            if (seekDragging && dur > 0) cur = Math.min(dur, Math.max(0, seekDragRatio * dur));
             const ratio = dur > 0 ? Math.min(1, Math.max(0, cur / dur)) : 0;
 
             const curText = formatTime(cur);
@@ -1667,6 +2017,7 @@
             if (!currentUser || !currentUser.id) {
                 loadLocalLists();
                 renderMyLists();
+                ensureDefaultLocalPlaylist();
                 renderCreatedPlaylists();
                 return;
             }
@@ -1685,6 +2036,7 @@
                 recentTracks = [];
             }
             renderMyLists();
+            await ensureDefaultServerPlaylistId().catch(() => {});
             renderCreatedPlaylists();
         }
 
@@ -1733,17 +2085,16 @@
         }
 
         function updateLikeButtonUI() {
-            if (!playerLikeBtn) return;
-            const icon = playerLikeBtn.querySelector('.material-icons');
-            if (!icon) return;
-            if (!currentTrack) {
-                icon.innerText = 'favorite_border';
-                icon.style.color = '';
-                return;
+            const btns = [playerLikeBtn, playerAddToPlaylistBtn].filter(Boolean);
+            if (!btns.length) return;
+            const liked = !!currentTrack && isTrackLiked(currentTrack);
+            for (const btn of btns) {
+                const icon = btn.querySelector('.material-icons');
+                if (!icon) continue;
+                icon.innerText = liked ? 'favorite' : 'favorite_border';
+                icon.style.color = liked ? 'red' : '';
+                btn.title = liked ? '已喜欢' : '喜欢';
             }
-            const liked = isTrackLiked(currentTrack);
-            icon.innerText = liked ? 'favorite' : 'favorite_border';
-            icon.style.color = liked ? 'red' : '';
         }
 
         function updatePlayerPageLikeUI() {
@@ -2060,6 +2411,10 @@
 
         function openQueueModal() {
             if (!queueModal) return;
+            if (isQueueModalOpen()) {
+                closeQueueModal();
+                return;
+            }
             renderQueueModal();
             queueModal.classList.remove('hidden');
             document.body.style.overflow = 'hidden';
@@ -2360,6 +2715,7 @@
 
         async function toggleLikeForCurrent() {
             if (!currentTrack) return;
+            const t = sanitizeTrack(currentTrack);
             if (currentUser && currentUser.id) {
                 const data = await apiRequest('/api/user/likes/toggle', {
                     method: 'POST',
@@ -2368,6 +2724,16 @@
                 });
                 likedTracks = Array.isArray(data.likes) ? data.likes.map(sanitizeTrack).filter(Boolean) : [];
                 renderMyLists();
+                const pid = await ensureDefaultServerPlaylistId().catch(() => '');
+                if (pid && t) {
+                    const liked = likedTracks.some((x) => trackKey(x) === trackKey(t));
+                    const path = liked ? '/api/user/playlists/add' : '/api/user/playlists/remove';
+                    apiRequest(path, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ playlistId: String(pid), track: t }),
+                    }).catch(() => {});
+                }
                 return;
             }
 
@@ -2378,6 +2744,12 @@
             likedTracks = likedTracks.filter(Boolean).slice(0, 500);
             saveLocalList(LIKED_KEY, likedTracks);
             renderMyLists();
+            const pid = ensureDefaultLocalPlaylist();
+            if (pid && t) {
+                const liked = likedTracks.some((x) => trackKey(x) === trackKey(t));
+                if (liked) addTrackToPlaylist(pid, t);
+                else removeTrackFromPlaylist(pid, t);
+            }
         }
 
         async function recordDownload(track) {
@@ -2454,8 +2826,7 @@
                 title.innerText = track.name || '';
                 const sub = document.createElement('div');
                 sub.className = 'text-xs text-material-text-secondary truncate';
-                const platformTag = platformLabel(track.platform);
-                sub.innerText = `${track.artist || ''}${track.album ? ' · ' + track.album : ''}${platformTag ? ' · ' + platformTag : ''}`;
+                sub.innerText = `${track.artist || ''}${track.album ? ' · ' + track.album : ''}`;
                 meta.appendChild(title);
                 meta.appendChild(sub);
 
@@ -2466,17 +2837,7 @@
                 play.type = 'button';
                 play.className = 'w-9 h-9 rounded-full bg-material-primary/15 text-material-primary hover:bg-material-primary/25 transition flex items-center justify-center ripple shrink-0';
                 play.innerHTML = '<span class="material-icons text-xl">play_arrow</span>';
-                play.addEventListener('click', async (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setQueue(list, i);
-                    try {
-                        await playTrack(track);
-                    } catch (err) {
-                        const msg = err instanceof Error && err.message ? err.message : '后端未启动或资源不可用';
-                        alert(`播放失败：${msg}`);
-                    }
-                });
+                setupTrackPlayButton(play, track, list, i);
 
                 const dl = document.createElement('button');
                 dl.type = 'button';
@@ -2507,6 +2868,7 @@
 
                 container.appendChild(row);
             }
+            updateInlinePlayButtonsUI();
         }
 
         function trackToDownloadUrl(track) {
@@ -2575,6 +2937,52 @@
             throw new Error('不支持的平台');
         }
 
+        async function preloadDefaultTrack(tracks) {
+            if (defaultTrackPreloaded) return false;
+            if (audio.src || currentTrack) return false;
+            const list = Array.isArray(tracks) ? tracks.filter(Boolean) : [];
+            if (!list.length) return false;
+
+            for (let i = 0; i < Math.min(6, list.length); i++) {
+                const t = list[i];
+                if (!t) continue;
+                try {
+                    const url = t._resolvedUrl || (await resolveOnlineSongUrl(t));
+                    if (!url) continue;
+                    currentTrack = t;
+                    ensureQueueIndexForTrack(t);
+                    updatePlayerBarUI();
+                    updatePlayerPageUI();
+                    updateLikeButtonUI();
+                    updatePlayerPageLikeUI();
+                    audio.preload = 'metadata';
+                    audio.src = toProxyMediaUrl(url);
+                    try {
+                        audio.load();
+                    } catch {}
+                    setPlayIcon(false);
+                    updatePlayerPagePlayUI();
+                    updateInlinePlayButtonsUI();
+                    setQueue(list, i);
+                    defaultTrackPreloaded = true;
+                    return true;
+                } catch {}
+            }
+
+            currentTrack = list[0];
+            ensureQueueIndexForTrack(list[0]);
+            updatePlayerBarUI();
+            updatePlayerPageUI();
+            updateLikeButtonUI();
+            updatePlayerPageLikeUI();
+            setPlayIcon(false);
+            updatePlayerPagePlayUI();
+            updateInlinePlayButtonsUI();
+            setQueue(list, 0);
+            defaultTrackPreloaded = true;
+            return false;
+        }
+
         async function playTrack(track) {
             currentTrack = track;
             ensureQueueIndexForTrack(track);
@@ -2587,6 +2995,9 @@
             if (!url) throw new Error('no song url');
             audio.src = toProxyMediaUrl(url);
             await audio.play();
+            setPlayIcon(true);
+            updatePlayerPagePlayUI();
+            updateInlinePlayButtonsUI();
             recordRecent(track).catch(() => {});
         }
 
@@ -2596,8 +3007,23 @@
                 const url = track._resolvedUrl || (await resolveOnlineSongUrl(track));
                 if (!url) throw new Error('no song url');
                 const baseName = `${track.name || 'music'} - ${track.artist || ''}`.trim();
+                const downloadHref = toProxyDownloadUrl(url, baseName);
+                const absoluteDownloadUrl = (() => {
+                    try {
+                        return new URL(downloadHref, window.location.href).toString();
+                    } catch {
+                        return downloadHref;
+                    }
+                })();
+                try {
+                    if (window.MagicMusicAndroid && typeof window.MagicMusicAndroid.download === 'function') {
+                        window.MagicMusicAndroid.download(absoluteDownloadUrl, baseName || 'music');
+                        recordDownload(track).catch(() => {});
+                        return;
+                    }
+                } catch {}
                 const a = document.createElement('a');
-                a.href = toProxyDownloadUrl(url, baseName);
+                a.href = downloadHref;
                 a.download = baseName || 'music';
                 document.body.appendChild(a);
                 a.click();
@@ -2643,25 +3069,14 @@
                 title.innerText = track.name || '';
                 const sub = document.createElement('div');
                 sub.className = 'text-xs text-material-text-secondary truncate';
-                const platformTag = platformLabel(track.platform);
-                sub.innerText = `${track.artist || ''}${track.album ? ' · ' + track.album : ''}${platformTag ? ' · ' + platformTag : ''}`;
+                sub.innerText = `${track.artist || ''}${track.album ? ' · ' + track.album : ''}`;
                 meta.appendChild(title);
                 meta.appendChild(sub);
 
                 const play = document.createElement('button');
                 play.className = 'w-9 h-9 rounded-full bg-material-primary/15 text-material-primary hover:bg-material-primary/25 transition flex items-center justify-center ripple shrink-0';
                 play.innerHTML = '<span class="material-icons text-xl">play_arrow</span>';
-                play.addEventListener('click', async (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setQueue(list, i);
-                    try {
-                        await playTrack(track);
-                    } catch (err) {
-                        const msg = err instanceof Error && err.message ? err.message : '后端未启动或资源不可用';
-                        alert(`播放失败：${msg}`);
-                    }
-                });
+                setupTrackPlayButton(play, track, list, i);
 
                 const dl = document.createElement('button');
                 dl.type = 'button';
@@ -2690,6 +3105,7 @@
             }
 
             searchResultsSection.classList.remove('hidden');
+            updateInlinePlayButtonsUI();
         }
 
         function normalizeTrack(raw) {
@@ -2738,6 +3154,8 @@
         let homeSlides = [];
         let homeSlideIndex = 0;
         let homeSlideTimer = null;
+        let homeGuessTracks = [];
+        let homeDailyTracks = [];
 
         function getHomeSlideSrc(slide) {
             if (!slide) return '';
@@ -2844,6 +3262,10 @@
         const homeSlideDots = document.getElementById('home-slide-dots');
         const homeSlidePrev = document.getElementById('home-slide-prev');
         const homeSlideNext = document.getElementById('home-slide-next');
+        const homeCardGuess = document.getElementById('home-card-guess');
+        const homeCardDaily = document.getElementById('home-card-daily');
+        const homeCardGuessSub = document.getElementById('home-card-guess-sub');
+        const homeCardDailySub = document.getElementById('home-card-daily-sub');
 
         if (homeSlidePrev) {
             homeSlidePrev.addEventListener('click', (e) => {
@@ -2873,6 +3295,32 @@
                     await playHomeSlidePlaylist(slide);
                 } catch (err) {
                     alert(err instanceof Error ? err.message : '播放失败');
+                }
+            });
+        }
+        if (homeCardGuess) {
+            homeCardGuess.addEventListener('click', async () => {
+                const tracks = Array.isArray(homeGuessTracks) ? homeGuessTracks.filter(Boolean) : [];
+                if (!tracks.length) return;
+                setQueue(tracks, 0);
+                // openListResults('猜你喜欢', tracks);
+                try {
+                    await playTrack(tracks[0]);
+                } catch (err) {
+                    console.error(err);
+                }
+            });
+        }
+        if (homeCardDaily) {
+            homeCardDaily.addEventListener('click', async () => {
+                const tracks = Array.isArray(homeDailyTracks) ? homeDailyTracks.filter(Boolean) : [];
+                if (!tracks.length) return;
+                setQueue(tracks, 0);
+                // openListResults('每日推荐', tracks);
+                try {
+                    await playTrack(tracks[0]);
+                } catch (err) {
+                    console.error(err);
                 }
             });
         }
@@ -3184,17 +3632,7 @@
                 play.type = 'button';
                 play.className = 'w-8 h-8 flex items-center justify-center rounded-full text-material-text-secondary hover:text-material-text hover:bg-material-text/5 transition';
                 play.innerHTML = '<span class="material-icons text-[20px]">play_arrow</span>';
-                play.addEventListener('click', async (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setQueue(tracksForQueue, queueIdx);
-                    try {
-                        await playTrack(track);
-                    } catch (err) {
-                        const msg = err instanceof Error && err.message ? err.message : '后端未启动或资源不可用';
-                        alert(`播放失败：${msg}`);
-                    }
-                });
+                setupTrackPlayButton(play, track, tracksForQueue, queueIdx);
                 const dl = document.createElement('button');
                 dl.type = 'button';
                 dl.className = 'w-8 h-8 flex items-center justify-center rounded-full text-material-text-secondary hover:text-material-text hover:bg-material-text/5 transition';
@@ -3226,6 +3664,7 @@
             if (tracksForQueue.length) {
                 setQueue(tracksForQueue, 0);
             }
+            updateInlinePlayButtonsUI();
         }
 
         function renderRadioRecommends(radios) {
@@ -3437,11 +3876,7 @@
                 const name = document.createElement('div');
                 name.className = 'text-sm font-medium text-material-text line-clamp-2 min-h-[40px]';
                 name.innerText = it?.name || '';
-                const sub = document.createElement('div');
-                sub.className = 'text-xs text-material-text-secondary mt-1';
-                sub.innerText = it?.platform === 'kugou' ? '酷狗' : '网易云';
                 meta.appendChild(name);
-                meta.appendChild(sub);
 
                 wrap.appendChild(coverWrap);
                 wrap.appendChild(meta);
@@ -3796,6 +4231,7 @@
         }
 
         const LOCAL_PLAYLISTS_KEY = 'magicMusic_localPlaylists_v1';
+        const DEFAULT_LOCAL_PLAYLIST_ID = 'magicMusic_defaultPlaylist_v1';
 
         function getLocalPlaylists() {
             const raw = localStorage.getItem(LOCAL_PLAYLISTS_KEY);
@@ -3817,6 +4253,18 @@
         function saveLocalPlaylists(list) {
             const next = Array.isArray(list) ? list : [];
             localStorage.setItem(LOCAL_PLAYLISTS_KEY, JSON.stringify(next));
+        }
+
+        function ensureDefaultLocalPlaylist() {
+            const playlists = getLocalPlaylists();
+            const found = playlists.find((p) => String(p.id) === DEFAULT_LOCAL_PLAYLIST_ID) || playlists.find((p) => String(p.name) === DEFAULT_PLAYLIST_NAME);
+            if (found) return String(found.id);
+            const now = new Date().toISOString();
+            const pl = { id: DEFAULT_LOCAL_PLAYLIST_ID, name: DEFAULT_PLAYLIST_NAME, tracks: [], created: now };
+            const next = [pl, ...playlists];
+            saveLocalPlaylists(next);
+            renderLocalPlaylists();
+            return pl.id;
         }
 
         function updateUserPlaylistsSummary() {
@@ -3870,6 +4318,32 @@
             } catch {
                 return [];
             }
+        }
+
+        async function ensureDefaultServerPlaylistId() {
+            if (!(currentUser && currentUser.id)) {
+                defaultServerPlaylistId = '';
+                return '';
+            }
+            if (defaultServerPlaylistId) return defaultServerPlaylistId;
+            const list = await fetchServerPlaylists();
+            const found = Array.isArray(list) ? list.find((p) => String(p?.name || '') === DEFAULT_PLAYLIST_NAME) : null;
+            if (found && found.id) {
+                defaultServerPlaylistId = String(found.id);
+                return defaultServerPlaylistId;
+            }
+            const created = await apiRequest('/api/user/playlists', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: DEFAULT_PLAYLIST_NAME }),
+            }).catch(() => null);
+            const pid = created && created.playlist && created.playlist.id ? String(created.playlist.id) : '';
+            if (pid) {
+                defaultServerPlaylistId = pid;
+                return defaultServerPlaylistId;
+            }
+            defaultServerPlaylistId = '';
+            return '';
         }
 
         function setUserPlaylistsSummary(label, count) {
@@ -3993,6 +4467,20 @@
             const exists = tracks.some((t) => `${t?.platform || ''}:${String(t?.id || '')}` === key);
             if (!exists) tracks.unshift(track);
             playlists[idx] = { ...pl, tracks };
+            saveLocalPlaylists(playlists);
+            renderLocalPlaylists();
+        }
+
+        function removeTrackFromPlaylist(playlistId, track) {
+            if (!track || !playlistId) return;
+            const playlists = getLocalPlaylists();
+            const idx = playlists.findIndex((p) => String(p.id) === String(playlistId));
+            if (idx < 0) return;
+            const pl = playlists[idx];
+            const tracks = Array.isArray(pl.tracks) ? pl.tracks : [];
+            const key = `${track.platform || ''}:${String(track.id || '')}`;
+            const nextTracks = tracks.filter((t) => `${t?.platform || ''}:${String(t?.id || '')}` !== key);
+            playlists[idx] = { ...pl, tracks: nextTracks };
             saveLocalPlaylists(playlists);
             renderLocalPlaylists();
         }
@@ -4323,13 +4811,34 @@
             }
         }
 
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
         async function initRecommendations() {
             const tasks = [
-                initHomeSlides(),
                 fetch('/kugou/fm/recommend', { credentials: 'same-origin' })
                     .then((r) => r.json())
                     .then((j) => {
                         const rows = Array.isArray(j?.data) ? j.data : [];
+                        const allGuessRaw = rows.flatMap((row) => (Array.isArray(row?.rcmdlist) ? row.rcmdlist : []));
+                        let guessTracks = allGuessRaw
+                            .map(normalizeKuGouSongToTrack)
+                            .filter(Boolean)
+                            .filter((t, idx, arr) => idx === arr.findIndex((x) => trackKey(x) === trackKey(t)));
+                        
+                        // Shuffle to ensure variety
+                        guessTracks = shuffleArray(guessTracks).slice(0, 40);
+                        
+                        homeGuessTracks = guessTracks;
+                        if (homeCardGuessSub) {
+                            const first = guessTracks[0];
+                            homeCardGuessSub.innerText = first ? `共 ${guessTracks.length} 首 · ${first.name || ''}${first.artist ? ' · ' + first.artist : ''}` : '暂无推荐';
+                        }
                         const out = rows.map((row) => ({
                             name: '推荐电台',
                             classid: row?.classid,
@@ -4337,7 +4846,11 @@
                         }));
                         renderRadioRecommends(out);
                     })
-                    .catch(() => renderRadioRecommends([])),
+                    .catch(() => {
+                        homeGuessTracks = [];
+                        if (homeCardGuessSub) homeCardGuessSub.innerText = '暂无推荐';
+                        renderRadioRecommends([]);
+                    }),
                 (async () => {
                     const [neRes, kgRes] = await Promise.all([
                         fetch('/netease/personalized?limit=10', { credentials: 'same-origin' }).then((r) => r.json()).catch(() => null),
@@ -4369,8 +4882,22 @@
                     ]);
                     const neList = Array.isArray(neRes?.result) ? neRes.result : [];
                     const kgList = Array.isArray(kgRes?.data?.song_list) ? kgRes.data.song_list : [];
-                    renderNewSongs([...kgList, ...neList].slice(0, 40));
-                })().catch(() => renderNewSongs([])),
+                    const merged = [...kgList, ...neList].slice(0, 40);
+                    renderNewSongs(merged);
+                    const tracks = merged
+                        .map((it) => normalizeAnySongToTrack(it?.song || it))
+                        .filter(Boolean);
+                    homeDailyTracks = shuffleArray(tracks).slice(0, 40);
+                    if (homeCardDailySub) {
+                        const first = tracks[0];
+                        homeCardDailySub.innerText = first ? `${first.name || ''}${first.artist ? ' · ' + first.artist : ''}` : '暂无推荐';
+                    }
+                    preloadDefaultTrack(tracks).catch(() => {});
+                })().catch(() => {
+                    homeDailyTracks = [];
+                    if (homeCardDailySub) homeCardDailySub.innerText = '暂无推荐';
+                    renderNewSongs([]);
+                }),
                 (async () => {
                     const [neRes, kgRes] = await Promise.all([
                         fetch('/netease/top/playlist?cat=%E5%85%A8%E9%83%A8&order=hot&limit=30&offset=0', { credentials: 'same-origin' }).then((r) => r.json()).catch(() => null),
@@ -4598,6 +5125,7 @@
             toggle(document.getElementById('recent-section'), showRecent);
             toggle(loginPageSection, showLogin);
             toggle(playerPageSection, showPlayer);
+            document.body.classList.toggle('mm-route-player', showPlayer);
 
             if (searchResultsSection) {
                 searchResultsSection.classList.add('hidden');
@@ -4871,6 +5399,9 @@
                 } catch (err) {
                     const msg = err instanceof Error && err.message ? err.message : '后端未启动或资源不可用';
                     alert(`播放失败：${msg}`);
+                } finally {
+                    setPlayIcon(!!audio.src && !audio.paused);
+                    updatePlayerPagePlayUI();
                 }
             });
         }
@@ -4886,12 +5417,19 @@
             });
         }
         if (playerAddToPlaylistBtn) {
-            playerAddToPlaylistBtn.addEventListener('click', () => {
+            playerAddToPlaylistBtn.addEventListener('click', async () => {
                 if (!currentTrack) {
                     alert('暂无播放歌曲');
                     return;
                 }
-                openPlaylistSelectModal();
+                try {
+                    await toggleLikeForCurrent();
+                } catch (err) {
+                    alert(err instanceof Error ? err.message : '操作失败');
+                } finally {
+                    updateLikeButtonUI();
+                    updatePlayerPageLikeUI();
+                }
             });
         }
 
@@ -4932,6 +5470,7 @@
                         await playTrack(currentTrack);
                     }
                 } finally {
+                    setPlayIcon(!!audio.src && !audio.paused);
                     updatePlayerPagePlayUI();
                 }
             });
@@ -4959,31 +5498,95 @@
                 setVolume(Number(playerPageVolume.value));
             });
         }
-        if (playerPageProgress) {
-            playerPageProgress.addEventListener('click', (e) => {
-                const dur = Number.isFinite(audio.duration) ? audio.duration : 0;
-                if (!dur) return;
-                const rect = playerPageProgress.getBoundingClientRect();
-                const x = Math.min(rect.width, Math.max(0, e.clientX - rect.left));
-                audio.currentTime = (x / rect.width) * dur;
-                updateProgressUI();
-            });
+        function seekRatioFromEvent(e, bar) {
+            const rect = bar.getBoundingClientRect();
+            const width = rect.width || 0;
+            if (!width) return 0;
+            const x = Math.min(width, Math.max(0, (e?.clientX ?? 0) - rect.left));
+            return Math.min(1, Math.max(0, x / width));
         }
 
-        if (progress) {
-            progress.addEventListener('click', (e) => {
+        function initSeekBar(bar) {
+            if (!bar) return;
+            const usePointer = 'PointerEvent' in window;
+            if (!usePointer) {
+                bar.addEventListener('click', (e) => {
+                    const dur = Number.isFinite(audio.duration) ? audio.duration : 0;
+                    if (!dur) return;
+                    const ratio = seekRatioFromEvent(e, bar);
+                    audio.currentTime = ratio * dur;
+                    updateProgressUI();
+                });
+                return;
+            }
+
+            bar.style.touchAction = 'none';
+
+            const onDown = (e) => {
                 const dur = Number.isFinite(audio.duration) ? audio.duration : 0;
                 if (!dur) return;
-                const rect = progress.getBoundingClientRect();
-                const x = Math.min(rect.width, Math.max(0, e.clientX - rect.left));
-                audio.currentTime = (x / rect.width) * dur;
-            });
+                try {
+                    if (typeof e?.preventDefault === 'function') e.preventDefault();
+                } catch {}
+                seekDragging = true;
+                document.body.classList.add('mm-seeking');
+                seekDragWasPlaying = !!(audio.src && !audio.paused);
+                seekDragRatio = seekRatioFromEvent(e, bar);
+                updateProgressUI();
+                try {
+                    if (typeof bar.setPointerCapture === 'function') bar.setPointerCapture(e.pointerId);
+                } catch {}
+            };
+
+            const onMove = (e) => {
+                if (!seekDragging) return;
+                seekDragRatio = seekRatioFromEvent(e, bar);
+                updateProgressUI();
+            };
+
+            const onEnd = async (e) => {
+                if (!seekDragging) return;
+                try {
+                    const dur = Number.isFinite(audio.duration) ? audio.duration : 0;
+                    if (dur) {
+                        const nextTime = Math.min(dur, Math.max(0, seekDragRatio * dur));
+                        audio.currentTime = nextTime;
+                    }
+                    seekDragging = false;
+                    updateProgressUI();
+                    if (seekDragWasPlaying) {
+                        try {
+                            await audio.play();
+                        } catch {}
+                    }
+                    seekDragWasPlaying = false;
+                } finally {
+                    document.body.classList.remove('mm-seeking');
+                }
+                try {
+                    if (typeof bar.releasePointerCapture === 'function') bar.releasePointerCapture(e.pointerId);
+                } catch {}
+            };
+
+            bar.addEventListener('pointerdown', onDown);
+            bar.addEventListener('pointermove', onMove);
+            bar.addEventListener('pointerup', onEnd);
+            bar.addEventListener('pointercancel', onEnd);
         }
+
+        initSeekBar(playerPageProgress);
+        initSeekBar(progress);
 
         audio.addEventListener('timeupdate', updateProgressUI);
         audio.addEventListener('loadedmetadata', updateProgressUI);
-        audio.addEventListener('play', () => setPlayIcon(true));
-        audio.addEventListener('pause', () => setPlayIcon(false));
+        audio.addEventListener('play', () => {
+            setPlayIcon(true);
+            updateInlinePlayButtonsUI();
+        });
+        audio.addEventListener('pause', () => {
+            setPlayIcon(false);
+            updateInlinePlayButtonsUI();
+        });
         audio.addEventListener('play', updatePlayerPagePlayUI);
         audio.addEventListener('pause', updatePlayerPagePlayUI);
         audio.addEventListener('ended', () => {
@@ -5003,18 +5606,29 @@
             }
         }
 
+        function notifyNativeTheme(isLight) {
+            try {
+                if (window.MagicMusicAndroid && typeof window.MagicMusicAndroid.setTheme === 'function') {
+                    window.MagicMusicAndroid.setTheme(isLight ? 'light' : 'dark');
+                }
+            } catch {}
+        }
+
         if (localStorage.theme === 'light' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: light)').matches)) {
             html.classList.add('light');
             updateToggleIcons(true);
+            notifyNativeTheme(true);
         } else {
             html.classList.remove('light');
             updateToggleIcons(false);
+            notifyNativeTheme(false);
         }
 
         function toggleTheme() {
             const isLight = html.classList.toggle('light');
             localStorage.theme = isLight ? 'light' : 'dark';
             updateToggleIcons(isLight);
+            notifyNativeTheme(isLight);
         }
 
         if (themeToggleDesktop) themeToggleDesktop.addEventListener('click', toggleTheme);
@@ -5197,6 +5811,10 @@
         initSidebarToggle();
         initRecommendations();
         initLocalPlaylists();
+        if (window.location.pathname === '/player' && window.history.length <= 1) {
+            window.history.replaceState({}, '', '/playlists');
+            window.history.pushState({}, '', '/player');
+        }
         applyRoute(window.location.pathname);
         setActiveNavByPath(window.location.pathname);
         if (window.location.pathname === '/artists') {
@@ -5213,6 +5831,39 @@
         updatePlayerPageUI();
         updatePlayerBarUI();
         updateProgressUI();
+        window.addEventListener('DOMContentLoaded', () => {
+            const copyrightBtn = document.getElementById('copyright-btn');
+            const copyrightModal = document.getElementById('copyright-modal');
+            const copyrightClose = document.getElementById('copyright-modal-close');
+
+            if (copyrightBtn && copyrightModal && copyrightClose) {
+                copyrightBtn.addEventListener('click', () => {
+                    copyrightModal.classList.add('open');
+                });
+                copyrightClose.addEventListener('click', () => {
+                    copyrightModal.classList.remove('open');
+                });
+                copyrightModal.addEventListener('click', (e) => {
+                    if (e.target === copyrightModal) {
+                        copyrightModal.classList.remove('open');
+                    }
+                });
+            }
+        });
     </script>
+    <!-- Copyright Modal -->
+    <div id="copyright-modal">
+        <div class="bg-material-surface border border-material-border/60 rounded-xl p-6 max-w-sm w-full mx-4 shadow-2xl transform transition-all scale-100">
+            <h3 class="text-xl font-bold text-material-text mb-4">版权声明</h3>
+            <p class="text-material-text-secondary text-sm leading-relaxed mb-6">
+                本站所有资源均来自互联网，版权归原作者所有。本站仅供学习交流使用，请勿用于商业用途。如有侵权，请联系我们删除。
+            </p>
+            <div class="flex justify-end">
+                <button id="copyright-modal-close" class="px-4 py-2 bg-material-primary text-material-on-primary rounded-lg text-sm font-medium hover:bg-material-primary/90 transition">
+                    我知道了
+                </button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
