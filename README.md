@@ -123,12 +123,6 @@ docker run -d \
 - `NETEASE_HOST`：网易云 API 目标地址，默认 `127.0.0.1`
 - `NETEASE_PORT`：网易云 API 目标端口，默认 `3002`
 
-## 推送镜像到 Docker Hub（superneed/magic-music）
-
-```bash
-docker build -t superneed/magic-music:latest .
-echo "$DOCKERHUB_TOKEN" | docker login -u superneed --password-stdin
-docker push superneed/magic-music:latest
 ```
 
 ## 部署建议
