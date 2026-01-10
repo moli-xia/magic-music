@@ -1505,6 +1505,242 @@
         document.body.appendChild(audio);
         window.__mmAudio = audio;
         const isAndroidApp = !!(window.MagicMusicAndroid);
+        const mmDiag = {
+            logs: [],
+            lastPlayRequestAt: 0,
+            lastPlayContext: '',
+            lastPlayCallStack: '',
+            lastPauseCallStack: '',
+            lastGestureAt: 0,
+            lastPopupAt: 0,
+            popupCount: 0,
+        };
+        function mmDiagPush(type, data) {
+            if (!isAndroidApp) return;
+            try {
+                mmDiag.logs.push({ t: Date.now(), type: String(type || ''), data });
+                if (mmDiag.logs.length > 60) mmDiag.logs.splice(0, mmDiag.logs.length - 60);
+            } catch {}
+        }
+        (function () {
+            const origPlay = audio.play ? audio.play.bind(audio) : null;
+            const origPause = audio.pause ? audio.pause.bind(audio) : null;
+            const captureStack = () => {
+                try {
+                    throw new Error('mm_stack');
+                } catch (e) {
+                    try { return String(e && e.stack ? e.stack : ''); } catch { return ''; }
+                }
+            };
+
+            if (origPlay) {
+                audio.play = function (...args) {
+                    if (isAndroidApp) {
+                        mmDiag.lastPlayCallStack = captureStack();
+                        mmDiagPush('audio.play', { paused: !!audio.paused, src: (() => { try { return String(audio.currentSrc || audio.src || ''); } catch { return ''; } })() });
+                    }
+                    return origPlay(...args);
+                };
+            }
+            if (origPause) {
+                audio.pause = function (...args) {
+                    if (isAndroidApp) {
+                        mmDiag.lastPauseCallStack = captureStack();
+                        const delta = mmDiag.lastPlayRequestAt ? (Date.now() - mmDiag.lastPlayRequestAt) : -1;
+                        mmDiagPush('audio.pause', { deltaFromLastPlayRequestMs: delta, currentTime: (() => { try { return Number(audio.currentTime); } catch { return -1; } })() });
+                        const shouldShow =
+                            delta >= 0
+                            && delta < 1300
+                            && !audio.ended
+                            && (() => { try { return Number.isFinite(audio.currentTime) ? audio.currentTime < 2 : true; } catch { return true; } })();
+                        if (shouldShow) {
+                            try { mmShowDiag(`pauseSoonAfterPlay:${delta}ms`); } catch {}
+                        }
+                    }
+                    return origPause(...args);
+                };
+            }
+        })();
+        function mmDiagSnapshot() {
+            const snap = {};
+            try {
+                snap.now = new Date().toISOString();
+                snap.href = String(location.href || '');
+                snap.visibility = String(document.visibilityState || '');
+                snap.hasFocus = !!document.hasFocus();
+            } catch {}
+            try {
+                snap.audio = {
+                    src: (() => { try { return String(audio.src || ''); } catch { return ''; } })(),
+                    currentSrc: (() => { try { return String(audio.currentSrc || ''); } catch { return ''; } })(),
+                    paused: !!audio.paused,
+                    ended: !!audio.ended,
+                    readyState: (() => { try { return Number(audio.readyState); } catch { return -1; } })(),
+                    networkState: (() => { try { return Number(audio.networkState); } catch { return -1; } })(),
+                    currentTime: (() => { try { return Number(audio.currentTime); } catch { return -1; } })(),
+                    duration: (() => { try { return Number(audio.duration); } catch { return -1; } })(),
+                    muted: !!audio.muted,
+                    volume: (() => { try { return Number(audio.volume); } catch { return -1; } })(),
+                    playbackRate: (() => { try { return Number(audio.playbackRate); } catch { return -1; } })(),
+                    preload: (() => { try { return String(audio.preload || ''); } catch { return ''; } })(),
+                    crossOrigin: (() => { try { return String(audio.crossOrigin || ''); } catch { return ''; } })(),
+                    errorCode: (() => { try { return audio.error && typeof audio.error.code === 'number' ? Number(audio.error.code) : 0; } catch { return 0; } })(),
+                };
+            } catch {}
+            try {
+                snap.lastPlayRequestAt = mmDiag.lastPlayRequestAt;
+                snap.lastPlayContext = mmDiag.lastPlayContext;
+                snap.lastGestureAgoMs = mmDiag.lastGestureAt ? (Date.now() - mmDiag.lastGestureAt) : -1;
+            } catch {}
+            return snap;
+        }
+        function mmEnsureDiagOverlay() {
+            if (!isAndroidApp) return null;
+            let overlay = document.getElementById('mm-diag-overlay');
+            if (overlay) return overlay;
+            overlay = document.createElement('div');
+            overlay.id = 'mm-diag-overlay';
+            overlay.style.position = 'fixed';
+            overlay.style.left = '0';
+            overlay.style.top = '0';
+            overlay.style.right = '0';
+            overlay.style.bottom = '0';
+            overlay.style.zIndex = '999999';
+            overlay.style.background = 'rgba(0,0,0,0.72)';
+            overlay.style.display = 'none';
+            overlay.style.padding = '16px';
+            const panel = document.createElement('div');
+            panel.style.maxWidth = '960px';
+            panel.style.margin = '0 auto';
+            panel.style.height = '100%';
+            panel.style.display = 'flex';
+            panel.style.flexDirection = 'column';
+            panel.style.background = 'rgba(18,18,18,0.95)';
+            panel.style.border = '1px solid rgba(255,255,255,0.12)';
+            panel.style.borderRadius = '14px';
+            panel.style.overflow = 'hidden';
+            const header = document.createElement('div');
+            header.style.display = 'flex';
+            header.style.alignItems = 'center';
+            header.style.justifyContent = 'space-between';
+            header.style.gap = '10px';
+            header.style.padding = '12px 12px';
+            header.style.borderBottom = '1px solid rgba(255,255,255,0.10)';
+            const title = document.createElement('div');
+            title.style.color = '#fff';
+            title.style.fontSize = '14px';
+            title.style.fontWeight = '700';
+            title.textContent = '诊断信息（长按/全选复制）';
+            const actions = document.createElement('div');
+            actions.style.display = 'flex';
+            actions.style.gap = '8px';
+            const copyBtn = document.createElement('button');
+            copyBtn.type = 'button';
+            copyBtn.textContent = '复制';
+            copyBtn.style.padding = '8px 10px';
+            copyBtn.style.borderRadius = '10px';
+            copyBtn.style.background = 'rgba(255,255,255,0.10)';
+            copyBtn.style.color = '#fff';
+            copyBtn.style.fontSize = '13px';
+            copyBtn.style.border = '1px solid rgba(255,255,255,0.12)';
+            const closeBtn = document.createElement('button');
+            closeBtn.type = 'button';
+            closeBtn.textContent = '关闭';
+            closeBtn.style.padding = '8px 10px';
+            closeBtn.style.borderRadius = '10px';
+            closeBtn.style.background = 'rgba(255,255,255,0.06)';
+            closeBtn.style.color = '#fff';
+            closeBtn.style.fontSize = '13px';
+            closeBtn.style.border = '1px solid rgba(255,255,255,0.12)';
+            actions.appendChild(copyBtn);
+            actions.appendChild(closeBtn);
+            header.appendChild(title);
+            header.appendChild(actions);
+            const ta = document.createElement('textarea');
+            ta.id = 'mm-diag-textarea';
+            ta.style.flex = '1 1 auto';
+            ta.style.width = '100%';
+            ta.style.padding = '12px';
+            ta.style.border = '0';
+            ta.style.outline = 'none';
+            ta.style.resize = 'none';
+            ta.style.background = 'transparent';
+            ta.style.color = '#fff';
+            ta.style.fontFamily = 'monospace';
+            ta.style.fontSize = '12px';
+            ta.style.lineHeight = '1.35';
+            ta.style.whiteSpace = 'pre';
+            copyBtn.addEventListener('click', async () => {
+                const text = ta.value || '';
+                let ok = false;
+                try {
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        await navigator.clipboard.writeText(text);
+                        ok = true;
+                    }
+                } catch {}
+                try {
+                    if (!ok) {
+                        ta.focus();
+                        ta.select();
+                        ok = !!document.execCommand && document.execCommand('copy');
+                    }
+                } catch {}
+                if (ok) mmAlert('已复制到剪贴板');
+                else mmAlert('复制失败，请长按全选复制');
+            });
+            closeBtn.addEventListener('click', () => {
+                overlay.style.display = 'none';
+            });
+            panel.appendChild(header);
+            panel.appendChild(ta);
+            overlay.appendChild(panel);
+            document.body.appendChild(overlay);
+            return overlay;
+        }
+        function mmShowDiag(reason) {
+            if (!isAndroidApp) return;
+            const now = Date.now();
+            if (now - mmDiag.lastPopupAt < 1200) return;
+            mmDiag.lastPopupAt = now;
+            mmDiag.popupCount += 1;
+            const overlay = mmEnsureDiagOverlay();
+            const ta = overlay ? overlay.querySelector('#mm-diag-textarea') : null;
+            const snap = mmDiagSnapshot();
+            const lines = [];
+            lines.push(`reason=${String(reason || '')}`);
+            lines.push(`popupCount=${mmDiag.popupCount}`);
+            try { lines.push(`ua=${navigator.userAgent}`); } catch {}
+            lines.push('');
+            try { lines.push(`snapshot=${JSON.stringify(snap, null, 2)}`); } catch { lines.push(`snapshot=${String(snap)}`); }
+            lines.push('');
+            lines.push('lastPlayCallStack=');
+            lines.push(mmDiag.lastPlayCallStack || '');
+            lines.push('');
+            lines.push('lastPauseCallStack=');
+            lines.push(mmDiag.lastPauseCallStack || '');
+            lines.push('');
+            lines.push('logs=');
+            for (const it of mmDiag.logs) {
+                try {
+                    const ts = new Date(it.t).toISOString();
+                    lines.push(`[${ts}] ${it.type} ${typeof it.data === 'string' ? it.data : JSON.stringify(it.data)}`);
+                } catch {
+                    lines.push(String(it && it.type ? it.type : 'log'));
+                }
+            }
+            const text = lines.join('\n');
+            if (ta) {
+                ta.value = text;
+                overlay.style.display = 'block';
+                try {
+                    ta.focus();
+                    ta.setSelectionRange(0, ta.value.length);
+                } catch {}
+                return;
+            }
+            alert(text);
+        }
         let mmLastAudioErrorAt = 0;
         let mmLastAlertAt = 0;
         function mmAlert(text) {
@@ -1528,6 +1764,11 @@
         }
         async function mmPlay(context) {
             try {
+                if (isAndroidApp) {
+                    mmDiag.lastPlayRequestAt = Date.now();
+                    mmDiag.lastPlayContext = String(context || '');
+                    mmDiagPush('mmPlay', { context: mmDiag.lastPlayContext });
+                }
                 try {
                     if (playerPageVizCtx && playerPageVizCtx.state === 'suspended') {
                         await playerPageVizCtx.resume();
@@ -1552,6 +1793,12 @@
                     try { return String(audio.networkState); } catch { return ''; }
                 })();
                 const extra = `src=${src || '-'} readyState=${rs || '-'} networkState=${ns || '-'} errorCode=${code || '-'}`;
+                try {
+                    if (isAndroidApp) {
+                        mmDiagPush('mmPlayError', { context: ctx, detail: mmDescribeError(err), extra });
+                        mmShowDiag(`mmPlayError:${ctx || '-'}`);
+                    }
+                } catch {}
                 throw new Error(`${detail ? `${prefix}：${detail}` : prefix}\n${extra}`);
             }
         }
@@ -1610,6 +1857,7 @@
 
         function unlockAudioPlayback() {
             if (!isAndroidApp) return;
+            mmDiag.lastGestureAt = Date.now();
 
             if (audioUnlocked || audioUnlocking) return;
             audioUnlocking = true;
@@ -2459,16 +2707,17 @@
                 playerPageVizAnalyser.getByteFrequencyData(playerPageVizData);
 
                 const nBars = bars.length || 12;
+                const halfBars = Math.ceil(nBars / 2);
                 const binCount = playerPageVizData.length || 1;
-                const lowBin = Math.floor(binCount * 0.01);
-                const highBin = Math.max(lowBin + 1, Math.floor(binCount * 0.92));
+                const lowBin = Math.floor(binCount * 0.02);
+                const highBin = Math.max(lowBin + 1, Math.floor(binCount * 0.60));
                 const span = Math.max(1, highBin - lowBin);
-                const step = Math.max(1, Math.floor(span / nBars));
+                const step = Math.max(1, Math.floor(span / halfBars));
                 const maxH = 48;
                 const minH = 8;
                 let peak = 0;
 
-                for (let i = 0; i < nBars; i++) {
+                for (let i = 0; i < halfBars; i++) {
                     const start = lowBin + i * step;
                     const end = Math.min(highBin, start + step);
                     let sum = 0;
@@ -2482,8 +2731,14 @@
                     const avg = c ? sum / c : 0;
                     const norm = Math.min(1, Math.max(0, avg / 255));
                     const eased = norm ** 0.65;
-                    const bar = bars[i];
-                    if (bar) bar.style.height = `${Math.round(isPlaying ? (minH + eased * (maxH - minH)) : minH)}px`;
+                    const h = `${Math.round(isPlaying ? (minH + eased * (maxH - minH)) : minH)}px`;
+                    const leftIdx = (halfBars - 1) - i;
+                    const rightBase = nBars - halfBars;
+                    const rightIdx = rightBase + i;
+                    const leftBar = bars[leftIdx];
+                    if (leftBar) leftBar.style.height = h;
+                    const rightBar = bars[rightIdx];
+                    if (rightBar && rightIdx !== leftIdx) rightBar.style.height = h;
                 }
 
                 if (isPlaying) {

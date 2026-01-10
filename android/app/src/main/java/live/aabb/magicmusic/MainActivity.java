@@ -4,9 +4,6 @@ import android.annotation.SuppressLint;
 import android.app.DownloadManager;
 import android.content.Context;
 import android.graphics.Color;
-import android.media.AudioAttributes;
-import android.media.AudioFocusRequest;
-import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -29,14 +26,8 @@ import androidx.appcompat.app.AppCompatActivity;
 public class MainActivity extends AppCompatActivity {
   private static final String START_URL = "https://music.aabb.live/";
   private WebView webView;
-  private AudioManager audioManager;
-  private AudioFocusRequest audioFocusRequest;
-  private AudioManager.OnAudioFocusChangeListener audioFocusChangeListener;
   private PowerManager.WakeLock wakeLock;
   private boolean playbackActive = false;
-  private boolean hasAudioFocus = false;
-  private boolean everHadAudioFocusForThisPlayback = false;
-  private long playbackActivatedAtMs = 0L;
   private boolean themeObserverInjected = false;
 
   @SuppressLint("SetJavaScriptEnabled")
@@ -184,7 +175,6 @@ public class MainActivity extends AppCompatActivity {
   protected void onResume() {
     super.onResume();
     if (playbackActive) {
-      requestAudioFocus();
       acquireWakeLock();
     }
   }
@@ -208,24 +198,6 @@ public class MainActivity extends AppCompatActivity {
   }
 
   private void initPlaybackGuards() {
-    audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-    audioFocusChangeListener =
-        focusChange -> {
-          if (focusChange == AudioManager.AUDIOFOCUS_GAIN) {
-            hasAudioFocus = true;
-            everHadAudioFocusForThisPlayback = true;
-            return;
-          }
-          if (focusChange == AudioManager.AUDIOFOCUS_LOSS
-              || focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) {
-            hasAudioFocus = false;
-            return;
-          }
-          if (focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK) {
-            hasAudioFocus = false;
-          }
-        };
-
     PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
     if (pm != null) {
       wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "MagicMusic:Playback");
@@ -236,50 +208,10 @@ public class MainActivity extends AppCompatActivity {
   private void setPlaybackActive(boolean active) {
     playbackActive = active;
     if (active) {
-      playbackActivatedAtMs = android.os.SystemClock.elapsedRealtime();
-      everHadAudioFocusForThisPlayback = false;
-      requestAudioFocus();
       acquireWakeLock();
     } else {
       releaseWakeLock();
-      abandonAudioFocus();
     }
-  }
-
-  private void requestAudioFocus() {
-    if (audioManager == null) return;
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-      AudioAttributes attrs =
-          new AudioAttributes.Builder()
-              .setUsage(AudioAttributes.USAGE_MEDIA)
-              .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-              .build();
-      audioFocusRequest =
-          new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
-              .setAudioAttributes(attrs)
-              .setOnAudioFocusChangeListener(audioFocusChangeListener)
-              .build();
-      int result = audioManager.requestAudioFocus(audioFocusRequest);
-      hasAudioFocus = result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED;
-      return;
-    }
-
-    int result =
-        audioManager.requestAudioFocus(
-            audioFocusChangeListener, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
-    hasAudioFocus = result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED;
-  }
-
-  private void abandonAudioFocus() {
-    if (audioManager == null) return;
-    hasAudioFocus = false;
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-      if (audioFocusRequest != null) {
-        audioManager.abandonAudioFocusRequest(audioFocusRequest);
-      }
-      return;
-    }
-    audioManager.abandonAudioFocus(audioFocusChangeListener);
   }
 
   private void acquireWakeLock() {
