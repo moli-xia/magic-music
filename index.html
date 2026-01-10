@@ -1457,10 +1457,102 @@
     </main>
 
     <script>
-        const audio = new Audio();
+        const audio = document.createElement('audio');
         audio.crossOrigin = 'anonymous';
         audio.preload = 'none';
+        audio.playsInline = true;
+        audio.setAttribute('playsinline', '');
+        audio.setAttribute('webkit-playsinline', '');
+        audio.style.display = 'none';
+        document.body.appendChild(audio);
         window.__mmAudio = audio;
+        const isAndroidApp = !!(window.MagicMusicAndroid);
+        let audioUnlocked = false;
+        let audioUnlocking = false;
+        let audioUnlockEl = null;
+
+        function mmBytesToBase64(bytes) {
+            let bin = '';
+            const chunk = 0x8000;
+            for (let i = 0; i < bytes.length; i += chunk) {
+                bin += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+            }
+            return btoa(bin);
+        }
+
+        function makeSilentWavDataUri() {
+            const sampleRate = 8000;
+            const numChannels = 1;
+            const bitsPerSample = 8;
+            const dataSize = 1;
+            const buffer = new ArrayBuffer(44 + dataSize);
+            const view = new DataView(buffer);
+
+            const writeStr = (offset, str) => {
+                for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
+            };
+
+            writeStr(0, 'RIFF');
+            view.setUint32(4, 36 + dataSize, true);
+            writeStr(8, 'WAVE');
+            writeStr(12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true);
+            view.setUint16(22, numChannels, true);
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate * numChannels * (bitsPerSample / 8), true);
+            view.setUint16(32, numChannels * (bitsPerSample / 8), true);
+            view.setUint16(34, bitsPerSample, true);
+            writeStr(36, 'data');
+            view.setUint32(40, dataSize, true);
+            view.setUint8(44, 128);
+
+            const bytes = new Uint8Array(buffer);
+            return `data:audio/wav;base64,${mmBytesToBase64(bytes)}`;
+        }
+
+        function unlockAudioPlayback() {
+            if (!isAndroidApp) return;
+            if (audioUnlocked || audioUnlocking) return;
+            audioUnlocking = true;
+            try {
+                if (!audioUnlockEl) {
+                    audioUnlockEl = document.createElement('audio');
+                    audioUnlockEl.preload = 'auto';
+                    audioUnlockEl.playsInline = true;
+                    audioUnlockEl.setAttribute('playsinline', '');
+                    audioUnlockEl.setAttribute('webkit-playsinline', '');
+                    audioUnlockEl.style.display = 'none';
+                    document.body.appendChild(audioUnlockEl);
+                }
+                audioUnlockEl.muted = true;
+                audioUnlockEl.volume = 0;
+                audioUnlockEl.src = makeSilentWavDataUri();
+                try { audioUnlockEl.load(); } catch {}
+                const p = audioUnlockEl.play();
+                if (p && typeof p.then === 'function') {
+                    p.then(() => {
+                        try { audioUnlockEl.pause(); } catch {}
+                        try { audioUnlockEl.currentTime = 0; } catch {}
+                        audioUnlocked = true;
+                    }).catch(() => {
+                        audioUnlocked = false;
+                    }).finally(() => {
+                        audioUnlocking = false;
+                    });
+                    return;
+                }
+                audioUnlocked = true;
+            } catch {
+                audioUnlocked = false;
+            } finally {
+                if (!audioUnlocking) audioUnlocking = false;
+            }
+        }
+
+        document.addEventListener('pointerdown', unlockAudioPlayback, { passive: true });
+        document.addEventListener('touchend', unlockAudioPlayback, { passive: true });
+        document.addEventListener('click', unlockAudioPlayback, { passive: true });
 
         const playBtn = document.getElementById('main-play-btn');
         const playerBar = document.getElementById('player-bar');
@@ -3016,7 +3108,10 @@
         async function resolveOnlineSongUrl(track) {
             if (!track || !track.platform) throw new Error('invalid track');
             if (track.platform === 'netease') {
-                const tryV1 = await fetch(`/netease/song/url/v1?id=${encodeURIComponent(track.id)}&level=exhigh`, { credentials: 'same-origin' })
+                const v1FirstLevel = isAndroidApp ? 'standard' : 'exhigh';
+                const v1SecondLevel = isAndroidApp ? 'exhigh' : 'standard';
+
+                const tryV1 = await fetch(`/netease/song/url/v1?id=${encodeURIComponent(track.id)}&level=${encodeURIComponent(v1FirstLevel)}`, { credentials: 'same-origin' })
                     .then((r) => r.json())
                     .catch(() => null);
                 const list1 = tryV1 && Array.isArray(tryV1.data) ? tryV1.data : [];
@@ -3026,30 +3121,41 @@
                     return url1;
                 }
 
-                const tryV1Standard = await fetch(`/netease/song/url/v1?id=${encodeURIComponent(track.id)}&level=standard`, { credentials: 'same-origin' })
+                const tryV1Second = await fetch(`/netease/song/url/v1?id=${encodeURIComponent(track.id)}&level=${encodeURIComponent(v1SecondLevel)}`, { credentials: 'same-origin' })
                     .then((r) => r.json())
                     .catch(() => null);
-                const list1b = tryV1Standard && Array.isArray(tryV1Standard.data) ? tryV1Standard.data : [];
+                const list1b = tryV1Second && Array.isArray(tryV1Second.data) ? tryV1Second.data : [];
                 const url1b = (list1b[0] || {}).url || '';
                 if (url1b) {
                     track._resolvedUrl = url1b;
                     return url1b;
                 }
 
-                const tryLegacy = await fetch(`/netease/song/url?id=${encodeURIComponent(track.id)}&br=999000`, { credentials: 'same-origin' })
-                    .then((r) => r.json())
-                    .catch(() => null);
-                const list2 = tryLegacy && Array.isArray(tryLegacy.data) ? tryLegacy.data : [];
-                const url2 = (list2[0] || {}).url || '';
-                if (url2) {
-                    track._resolvedUrl = url2;
-                    return url2;
+                const legacyBrs = isAndroidApp ? [320000, 128000, 999000] : [999000];
+                for (const br of legacyBrs) {
+                    const tryLegacy = await fetch(`/netease/song/url?id=${encodeURIComponent(track.id)}&br=${encodeURIComponent(br)}`, { credentials: 'same-origin' })
+                        .then((r) => r.json())
+                        .catch(() => null);
+                    const list2 = tryLegacy && Array.isArray(tryLegacy.data) ? tryLegacy.data : [];
+                    const url2 = (list2[0] || {}).url || '';
+                    if (url2) {
+                        track._resolvedUrl = url2;
+                        return url2;
+                    }
                 }
 
                 throw new Error('该歌曲可能无可用播放链接（版权/VIP/地区限制）');
             }
             if (track.platform === 'kugou') {
                 const albumAudioId = track.album_audio_id || '0';
+                const legacyRes = await fetch(`/kugou/song/url?hash=${encodeURIComponent(track.id)}&album_audio_id=${encodeURIComponent(albumAudioId)}&album_id=0&quality=128&free_part=1`, { credentials: 'same-origin' });
+                const legacyJson = await legacyRes.json().catch(() => null);
+                const legacyUrl = (legacyJson && Array.isArray(legacyJson.url) ? legacyJson.url[0] : '') || (legacyJson && Array.isArray(legacyJson.backupUrl) ? legacyJson.backupUrl[0] : '') || '';
+                if (legacyUrl) {
+                    track._resolvedUrl = legacyUrl;
+                    return legacyUrl;
+                }
+
                 const newRes = await fetch(`/kugou/song/url/new?hash=${encodeURIComponent(track.id)}&album_audio_id=${encodeURIComponent(albumAudioId)}`, { credentials: 'same-origin' });
                 const newJson = await newRes.json().catch(() => null);
                 const newList = newJson && Array.isArray(newJson.data) ? newJson.data : (newJson && Array.isArray(newJson?.data?.data) ? newJson.data.data : []);
@@ -3061,13 +3167,7 @@
                     track._resolvedUrl = url;
                     return url;
                 }
-
-                const legacyRes = await fetch(`/kugou/song/url?hash=${encodeURIComponent(track.id)}&album_audio_id=${encodeURIComponent(albumAudioId)}&album_id=0&quality=128&free_part=1`, { credentials: 'same-origin' });
-                const legacyJson = await legacyRes.json().catch(() => null);
-                const legacyUrl = (legacyJson && Array.isArray(legacyJson.url) ? legacyJson.url[0] : '') || (legacyJson && Array.isArray(legacyJson.backupUrl) ? legacyJson.backupUrl[0] : '') || '';
-                if (!legacyUrl) throw new Error('no song url');
-                track._resolvedUrl = legacyUrl;
-                return legacyUrl;
+                throw new Error('no song url');
             }
             throw new Error('不支持的平台');
         }
@@ -3119,6 +3219,7 @@
         }
 
         async function playTrack(track) {
+            unlockAudioPlayback();
             currentTrack = track;
             ensureQueueIndexForTrack(track);
             updatePlayerBarUI();

@@ -49,11 +49,16 @@ public class MainActivity extends AppCompatActivity {
     settings.setDomStorageEnabled(true);
     settings.setDatabaseEnabled(true);
     settings.setMediaPlaybackRequiresUserGesture(false);
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+      settings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
+    }
     settings.setLoadWithOverviewMode(true);
     settings.setUseWideViewPort(true);
     settings.setSupportZoom(false);
     settings.setBuiltInZoomControls(false);
     settings.setDisplayZoomControls(false);
+    settings.setUserAgentString(
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
 
     CookieManager cookieManager = CookieManager.getInstance();
     cookieManager.setAcceptCookie(true);
