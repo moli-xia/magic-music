@@ -503,6 +503,19 @@
                 padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
             }
 
+            body.mm-player-page-open #player-page-section .mm-vinyl-float {
+                padding-top: 44px !important;
+                padding-bottom: 34px !important;
+            }
+
+            body.mm-player-page-open #player-page-section .mm-player-visualizer {
+                margin-top: 20px;
+            }
+
+            body.mm-player-page-open #player-page-section #player-page-single-lyric {
+                margin-top: 18px !important;
+            }
+
             body.mm-player-page-open #player-page-section .mm-psy-bg,
             body.mm-player-page-open #player-page-section .mm-psy-vignette {
                 clip-path: none !important;
@@ -794,6 +807,12 @@
         :root.light .home-radio-visualizer span {
             background: #000;
         }
+
+        :root.light #player-page-vinyl.mm-vinyl {
+            box-shadow:
+                0 18px 44px rgba(0,0,0,0.18),
+                inset 0 0 0 1px rgba(0,0,0,0.10);
+        }
         
         .mm-player-visualizer {
             display: flex;
@@ -833,6 +852,12 @@
         @keyframes mmPlayerEq {
             0%, 100% { height: 6px; }
             50% { height: 100%; }
+        }
+
+        .mm-player-visualizer.is-fallback .bar {
+            animation-name: mmPlayerEq;
+            animation-timing-function: ease-in-out;
+            animation-iteration-count: infinite;
         }
         .home-radio-card-guess {
             --mm-c1: rgba(124, 58, 237, 0.95);
@@ -1138,7 +1163,7 @@
                     <div class="home-radio-card-inner">
                         <div class="flex items-start gap-3 relative z-10">
                             <div class="min-w-0 pr-12 md:pr-14">
-                                <div class="home-radio-title text-base md:text-xl font-bold truncate">猜你喜欢</div>
+                                <div class="home-radio-title text-base md:text-xl font-bold">猜你喜欢</div>
                                 <div class="mt-1 home-radio-sub text-[12px] md:text-sm line-clamp-2" id="home-card-guess-sub">加载中…</div>
                             </div>
                         </div>
@@ -1151,7 +1176,7 @@
                     <div class="home-radio-card-inner">
                         <div class="flex items-start gap-3 relative z-10">
                             <div class="min-w-0 pr-12 md:pr-14">
-                                <div class="home-radio-title text-base md:text-xl font-bold truncate">每日推荐</div>
+                                <div class="home-radio-title text-base md:text-xl font-bold">每日推荐</div>
                                 <div class="mt-1 home-radio-sub text-[12px] md:text-sm line-clamp-2" id="home-card-daily-sub">加载中…</div>
                             </div>
                         </div>
@@ -1496,6 +1521,11 @@
         }
         async function mmPlay(context) {
             try {
+                try {
+                    if (playerPageVizCtx && playerPageVizCtx.state === 'suspended') {
+                        await playerPageVizCtx.resume();
+                    }
+                } catch {}
                 const p = audio.play();
                 if (p && typeof p.then === 'function') await p;
             } catch (err) {
@@ -2320,10 +2350,6 @@
             if (playerPageVinyl) {
                 playerPageVinyl.classList.toggle('is-playing', !audio.paused && !!audio.src);
             }
-            if (isAndroidApp) {
-                stopPlayerPageVisualizer();
-                return;
-            }
             if (!audio.paused && !!audio.src) startPlayerPageVisualizer();
             else stopPlayerPageVisualizer();
         }
@@ -2350,10 +2376,13 @@
         let playerPageVizSource = null;
         let playerPageVizData = null;
         let playerPageVizRaf = 0;
+        let playerPageVizSilentFrames = 0;
 
-        function stopPlayerPageVisualizer() {
+        function stopPlayerPageVisualizer(keepFallback = false) {
             if (playerPageVizRaf) cancelAnimationFrame(playerPageVizRaf);
             playerPageVizRaf = 0;
+            if (!keepFallback && playerPageVisualizer) playerPageVisualizer.classList.remove('is-fallback');
+            playerPageVizSilentFrames = 0;
             if (!playerPageVisualizerBars.length) return;
             for (const bar of playerPageVisualizerBars) {
                 if (bar) bar.style.height = '';
@@ -2370,9 +2399,24 @@
                 playerPageVizAnalyser = playerPageVizCtx.createAnalyser();
                 playerPageVizAnalyser.fftSize = 256;
                 playerPageVizAnalyser.smoothingTimeConstant = 0.86;
-                playerPageVizSource = playerPageVizCtx.createMediaElementSource(audio);
-                playerPageVizSource.connect(playerPageVizAnalyser);
-                playerPageVizAnalyser.connect(playerPageVizCtx.destination);
+                const stream = (() => {
+                    try {
+                        if (typeof audio.captureStream === 'function') return audio.captureStream();
+                        if (typeof audio.mozCaptureStream === 'function') return audio.mozCaptureStream();
+                        return null;
+                    } catch {
+                        return null;
+                    }
+                })();
+                if (stream && typeof playerPageVizCtx.createMediaStreamSource === 'function') {
+                    playerPageVizSource = playerPageVizCtx.createMediaStreamSource(stream);
+                    playerPageVizSource.connect(playerPageVizAnalyser);
+                } else {
+                    if (isAndroidApp) throw new Error('no_capture_stream');
+                    playerPageVizSource = playerPageVizCtx.createMediaElementSource(audio);
+                    playerPageVizSource.connect(playerPageVizAnalyser);
+                    playerPageVizAnalyser.connect(playerPageVizCtx.destination);
+                }
                 playerPageVizData = new Uint8Array(playerPageVizAnalyser.frequencyBinCount);
                 return true;
             } catch {
@@ -2385,7 +2429,15 @@
         }
 
         function startPlayerPageVisualizer() {
-            if (!ensurePlayerPageVisualizerGraph()) return;
+            if (playerPageVisualizer) playerPageVisualizer.classList.remove('is-fallback');
+            playerPageVizSilentFrames = 0;
+            if (!ensurePlayerPageVisualizerGraph()) {
+                if (playerPageVisualizer && playerPageVisualizerBars.length) {
+                    playerPageVisualizer.classList.add('is-fallback');
+                    stopPlayerPageVisualizer(true);
+                }
+                return;
+            }
             if (!playerPageVizCtx || !playerPageVizAnalyser || !playerPageVizData) return;
             if (playerPageVizCtx.state === 'suspended') {
                 playerPageVizCtx.resume().catch(() => {});
@@ -2407,6 +2459,7 @@
                 const step = Math.max(1, Math.floor(span / nBars));
                 const maxH = 48;
                 const minH = 8;
+                let peak = 0;
 
                 for (let i = 0; i < nBars; i++) {
                     const start = lowBin + i * step;
@@ -2414,7 +2467,9 @@
                     let sum = 0;
                     let c = 0;
                     for (let j = start; j < end; j++) {
-                        sum += playerPageVizData[j] || 0;
+                        const v = playerPageVizData[j] || 0;
+                        if (v > peak) peak = v;
+                        sum += v;
                         c += 1;
                     }
                     const avg = c ? sum / c : 0;
@@ -2425,7 +2480,16 @@
                     if (bar) bar.style.height = `${Math.round(h)}px`;
                 }
 
-                if (isPlaying) playerPageVizRaf = requestAnimationFrame(render);
+                if (isPlaying) {
+                    if (peak < 3) playerPageVizSilentFrames += 1;
+                    else playerPageVizSilentFrames = 0;
+                    if (playerPageVizSilentFrames >= 36 && playerPageVisualizer) {
+                        playerPageVisualizer.classList.add('is-fallback');
+                        stopPlayerPageVisualizer(true);
+                        return;
+                    }
+                    playerPageVizRaf = requestAnimationFrame(render);
+                }
                 else stopPlayerPageVisualizer();
             };
 
