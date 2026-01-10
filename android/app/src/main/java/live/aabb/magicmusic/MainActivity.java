@@ -4,10 +4,14 @@ import android.annotation.SuppressLint;
 import android.app.DownloadManager;
 import android.content.Context;
 import android.graphics.Color;
+import android.media.AudioAttributes;
+import android.media.AudioFocusRequest;
+import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.PowerManager;
 import android.view.View;
 import android.view.WindowInsetsController;
 import android.webkit.CookieManager;
@@ -25,6 +29,11 @@ import androidx.appcompat.app.AppCompatActivity;
 public class MainActivity extends AppCompatActivity {
   private static final String START_URL = "https://music.aabb.live/";
   private WebView webView;
+  private AudioManager audioManager;
+  private AudioFocusRequest audioFocusRequest;
+  private AudioManager.OnAudioFocusChangeListener audioFocusChangeListener;
+  private PowerManager.WakeLock wakeLock;
+  private boolean playbackActive = false;
 
   @SuppressLint("SetJavaScriptEnabled")
   @Override
@@ -33,6 +42,7 @@ public class MainActivity extends AppCompatActivity {
     setContentView(R.layout.activity_main);
 
     webView = findViewById(R.id.webview);
+    initPlaybackGuards();
 
     WebSettings settings = webView.getSettings();
     settings.setJavaScriptEnabled(true);
@@ -143,6 +153,20 @@ public class MainActivity extends AppCompatActivity {
   }
 
   @Override
+  protected void onPause() {
+    super.onPause();
+  }
+
+  @Override
+  protected void onResume() {
+    super.onResume();
+    if (playbackActive) {
+      requestAudioFocus();
+      acquireWakeLock();
+    }
+  }
+
+  @Override
   protected void onSaveInstanceState(Bundle outState) {
     super.onSaveInstanceState(outState);
     if (webView != null) {
@@ -152,11 +176,91 @@ public class MainActivity extends AppCompatActivity {
 
   @Override
   protected void onDestroy() {
+    setPlaybackActive(false);
     if (webView != null) {
       webView.destroy();
       webView = null;
     }
     super.onDestroy();
+  }
+
+  private void initPlaybackGuards() {
+    audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+    audioFocusChangeListener =
+        focusChange -> {
+          if (focusChange == AudioManager.AUDIOFOCUS_LOSS) {
+            runOnUiThread(
+                () -> {
+                  if (webView == null) return;
+                  webView.evaluateJavascript(
+                      "try{if(window.__mmAudio && !window.__mmAudio.paused){window.__mmAudio.pause();}}catch(e){}",
+                      null);
+                });
+          }
+        };
+
+    PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+    if (pm != null) {
+      wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "MagicMusic:Playback");
+      wakeLock.setReferenceCounted(false);
+    }
+  }
+
+  private void setPlaybackActive(boolean active) {
+    playbackActive = active;
+    if (active) {
+      requestAudioFocus();
+      acquireWakeLock();
+    } else {
+      releaseWakeLock();
+      abandonAudioFocus();
+    }
+  }
+
+  private void requestAudioFocus() {
+    if (audioManager == null) return;
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+      AudioAttributes attrs =
+          new AudioAttributes.Builder()
+              .setUsage(AudioAttributes.USAGE_MEDIA)
+              .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+              .build();
+      audioFocusRequest =
+          new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+              .setAudioAttributes(attrs)
+              .setOnAudioFocusChangeListener(audioFocusChangeListener)
+              .build();
+      audioManager.requestAudioFocus(audioFocusRequest);
+      return;
+    }
+
+    audioManager.requestAudioFocus(
+        audioFocusChangeListener, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
+  }
+
+  private void abandonAudioFocus() {
+    if (audioManager == null) return;
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+      if (audioFocusRequest != null) {
+        audioManager.abandonAudioFocusRequest(audioFocusRequest);
+      }
+      return;
+    }
+    audioManager.abandonAudioFocus(audioFocusChangeListener);
+  }
+
+  private void acquireWakeLock() {
+    if (wakeLock == null) return;
+    if (!wakeLock.isHeld()) {
+      wakeLock.acquire(10 * 60 * 1000L);
+    }
+  }
+
+  private void releaseWakeLock() {
+    if (wakeLock == null) return;
+    if (wakeLock.isHeld()) {
+      wakeLock.release();
+    }
   }
 
   private void injectThemeObserver(WebView view) {
@@ -223,6 +327,12 @@ public class MainActivity extends AppCompatActivity {
     public void setTheme(String theme) {
       final boolean isLight = "light".equalsIgnoreCase(theme);
       runOnUiThread(() -> applySystemBarTheme(isLight));
+    }
+
+    @JavascriptInterface
+    public void setPlaying(String playing) {
+      final boolean active = "1".equals(playing) || "true".equalsIgnoreCase(playing);
+      runOnUiThread(() -> setPlaybackActive(active));
     }
 
     @JavascriptInterface

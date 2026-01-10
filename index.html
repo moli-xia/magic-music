@@ -271,10 +271,11 @@
         .mm-lyrics {
             max-height: 42vh;
             overflow: auto;
+            touch-action: pan-y;
         }
 
         .mm-carousel {
-            touch-action: pan-y;
+            touch-action: pan-x;
         }
 
         #player-page-carousel {
@@ -376,6 +377,13 @@
             font-weight: 700;
         }
 
+        #playlist-square-section > div:first-child,
+        #hot-songs-section > div:first-child,
+        #charts-section > div:first-child,
+        #artists-section > div:first-child {
+            display: none !important;
+        }
+
         body.mm-route-player #player-progress-row {
             display: flex !important;
             position: absolute;
@@ -433,9 +441,19 @@
                 margin-bottom: 0 !important;
             }
 
+            :root {
+                --mm-mobile-lyric-font-size: 18px;
+                --mm-mobile-lyric-line-height: 1.7;
+            }
+
             #player-page-section .mm-lyrics {
-                font-size: 12px !important;
-                line-height: 1.55 !important;
+                font-size: var(--mm-mobile-lyric-font-size) !important;
+                line-height: var(--mm-mobile-lyric-line-height) !important;
+            }
+
+            #player-page-single-lyric {
+                font-size: var(--mm-mobile-lyric-font-size) !important;
+                line-height: var(--mm-mobile-lyric-line-height) !important;
             }
 
             #auth-captcha-img {
@@ -475,10 +493,20 @@
             }
 
             body.mm-player-page-open #player-page-section .mm-psy-shell {
-                height: calc(100vh - 72px);
+                height: 100vh;
                 border-radius: 0 !important;
                 border-left: none !important;
                 border-right: none !important;
+            }
+
+            body.mm-player-page-open #player-page-section .mm-psy-shell > .relative {
+                padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+            }
+
+            body.mm-player-page-open #player-page-section .mm-psy-bg,
+            body.mm-player-page-open #player-page-section .mm-psy-vignette {
+                clip-path: none !important;
+                border-radius: 0 !important;
             }
 
             body.mm-player-page-open #player-bar {
@@ -667,6 +695,11 @@
             transform: translate3d(-30%, 0, 0) rotate(0.001deg);
             animation: mmRadioLightFlow 3.8s linear infinite;
         }
+        :root:not(.light) .home-radio-card-guess::after,
+        :root:not(.light) .home-radio-card-daily::after {
+            animation: none;
+            opacity: 0;
+        }
         @keyframes mmRadioFloat {
             0% { transform: translate3d(-2%, -1%, 0) scale(1.06); }
             50% { transform: translate3d(2%, 1.5%, 0) scale(1.02); }
@@ -767,8 +800,8 @@
             align-items: center;
             justify-content: center;
             gap: 4px;
-            height: 32px;
-            margin-top: 24px;
+            height: 48px;
+            margin-top: 18px;
             margin-bottom: 4px;
             opacity: 0.9;
         }
@@ -776,7 +809,8 @@
             width: 4px;
             background: rgb(var(--primary-color));
             border-radius: 99px;
-            animation: mmPlayerEq 1s ease-in-out infinite;
+            animation: none;
+            transition: height 80ms linear;
             height: 6px;
             min-height: 6px;
         }
@@ -997,30 +1031,17 @@
         </div>
 
         <header class="md:hidden sticky top-0 z-20 bg-material-surface shadow-md transition-colors duration-300">
-            <div class="flex justify-between items-center p-4">
-                <button id="brand-home-mobile" class="flex items-center gap-2" type="button">
-                    <div class="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center shrink-0">
-                        <svg width="32" height="32" viewBox="0 0 64 64" aria-hidden="true" class="block">
-                            <defs>
-                                <linearGradient id="mmLogoGradMobile" x1="0" y1="0" x2="1" y2="1">
-                                    <stop stop-color="#7B1FA2"></stop>
-                                    <stop offset="1" stop-color="#E040FB"></stop>
-                                </linearGradient>
-                            </defs>
-                            <rect width="64" height="64" rx="16" fill="url(#mmLogoGradMobile)"></rect>
-                            <path d="M16 48V20l16 12 16-12v28" stroke="white" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none"></path>
-                        </svg>
-                    </div>
-                    <span class="font-bold text-lg text-material-text">魔力音乐</span>
-                </button>
-                <div class="flex items-center gap-2">
-                    <button id="theme-toggle-mobile" class="text-material-text ripple p-2 rounded-full">
-                         <span class="material-icons">dark_mode</span>
-                    </button>
-                    <button id="search-trigger-mobile" class="text-material-text ripple p-2 rounded-full">
-                        <span class="material-icons">search</span>
-                    </button>
+            <div class="flex items-center gap-2 p-4">
+                <div class="relative flex-1 group">
+                    <span class="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-material-text-secondary text-lg group-focus-within:text-material-primary transition-colors">search</span>
+                    <input id="search-input-mobile" type="search" placeholder="搜索在线音乐" autocomplete="off" class="w-full bg-material-text/5 text-material-text text-sm rounded-full pl-10 pr-4 py-2 focus:outline-none focus:bg-material-text/10 transition-colors placeholder-material-text-secondary/70">
                 </div>
+                <button id="theme-toggle-mobile" class="text-material-text ripple p-2 rounded-full shrink-0">
+                     <span class="material-icons">dark_mode</span>
+                </button>
+                <button id="copyright-btn-mobile" class="text-material-text ripple p-2 rounded-full shrink-0" title="版权声明" type="button">
+                    <span class="material-icons">info</span>
+                </button>
             </div>
             <div class="flex px-4 overflow-x-auto gap-6 hide-scrollbar pb-2">
                 <a id="mobile-tab-recommend" href="/" class="text-material-text font-bold border-b-2 border-material-primary pb-1 shrink-0">推荐</a>
@@ -1115,30 +1136,28 @@
             <section class="mb-7 mt-2 grid grid-cols-2 md:grid-cols-2 gap-3 md:gap-4">
                 <button id="home-card-guess" type="button" aria-label="猜你喜欢电台，点击即播" class="home-radio-card home-radio-card-guess text-left border border-material-border/60 px-4 py-4 md:px-5 md:py-5">
                     <div class="home-radio-card-inner">
-                        <div class="flex items-start justify-between gap-3 relative z-10">
-                            <div class="min-w-0">
+                        <div class="flex items-start gap-3 relative z-10">
+                            <div class="min-w-0 pr-12 md:pr-14">
                                 <div class="home-radio-title text-base md:text-xl font-bold truncate">猜你喜欢</div>
                                 <div class="mt-1 home-radio-sub text-[12px] md:text-sm line-clamp-2" id="home-card-guess-sub">加载中…</div>
                             </div>
-                            <div class="home-radio-cta shrink-0" aria-hidden="true">
-                                <span class="material-icons text-white text-[22px]">play_arrow</span>
-                            </div>
                         </div>
-                        <div class="home-radio-visualizer"><span></span><span></span><span></span><span></span></div>
+                        <div id="home-card-guess-play" class="home-radio-cta absolute bottom-2 right-2 md:bottom-3 md:right-3 shrink-0" aria-hidden="true">
+                            <span class="material-icons text-white text-[22px]">play_arrow</span>
+                        </div>
                     </div>
                 </button>
                 <button id="home-card-daily" type="button" aria-label="每日推荐电台，点击即播" class="home-radio-card home-radio-card-daily text-left border border-material-border/60 px-4 py-4 md:px-5 md:py-5">
                     <div class="home-radio-card-inner">
-                        <div class="flex items-start justify-between gap-3 relative z-10">
-                            <div class="min-w-0">
+                        <div class="flex items-start gap-3 relative z-10">
+                            <div class="min-w-0 pr-12 md:pr-14">
                                 <div class="home-radio-title text-base md:text-xl font-bold truncate">每日推荐</div>
                                 <div class="mt-1 home-radio-sub text-[12px] md:text-sm line-clamp-2" id="home-card-daily-sub">加载中…</div>
                             </div>
-                            <div class="home-radio-cta shrink-0" aria-hidden="true">
-                                <span class="material-icons text-white text-[22px]">play_arrow</span>
-                            </div>
                         </div>
-                        <div class="home-radio-visualizer"><span></span><span></span><span></span><span></span></div>
+                        <div id="home-card-daily-play" class="home-radio-cta absolute bottom-2 right-2 md:bottom-3 md:right-3 shrink-0" aria-hidden="true">
+                            <span class="material-icons text-white text-[22px]">play_arrow</span>
+                        </div>
                     </div>
                 </button>
             </section>
@@ -1268,7 +1287,7 @@
                             </div>
                         </div>
 
-                        <div id="player-page-meta" class="mt-2 text-xs text-material-text-secondary truncate">—</div>
+                        <div id="player-page-meta" class="mt-2 text-xs text-material-text-secondary truncate hidden"></div>
 
                         <div class="mt-6 w-full flex flex-col items-center">
                             <div id="player-page-carousel" class="mm-carousel w-full max-w-2xl overflow-hidden relative group">
@@ -1293,6 +1312,8 @@
                                             
                                             <!-- Volume Visualizer -->
                                             <div class="mm-player-visualizer">
+                                                <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
+                                                <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
                                                 <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
                                                 <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
                                                 <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
@@ -1396,7 +1417,7 @@
         </div>
 
         <nav class="md:hidden absolute bottom-0 w-full bg-material-surface border-t border-material-border flex justify-around items-center h-[56px] z-40 transition-colors duration-300">
-            <a id="mobile-nav-home" href="/" class="flex flex-col items-center justify-center text-material-text w-full h-full ripple">
+            <a id="mobile-nav-home" href="/" class="flex flex-col items-center justify-center text-material-primary w-full h-full ripple">
                 <span class="material-icons text-2xl">home</span>
                 <span class="text-[10px] mt-1">首页</span>
             </a>
@@ -1414,9 +1435,9 @@
             </a>
         </nav>
 
-        <div id="queue-modal" class="hidden fixed inset-0 z-50">
+        <div id="queue-modal" class="hidden fixed inset-0 z-[90]">
             <div id="queue-modal-backdrop" class="absolute inset-0 bg-black/45 backdrop-blur-sm"></div>
-            <div class="relative w-full h-full flex items-center justify-center p-4">
+            <div id="queue-modal-wrap" class="relative w-full h-full flex items-center justify-center p-4">
                 <div class="w-full max-w-md md:max-w-lg mm-glass border border-material-border/60 rounded-2xl overflow-hidden shadow-2xl">
                     <div class="flex items-center justify-between px-4 py-3 border-b border-material-border/50">
                         <div class="flex items-center gap-2">
@@ -1437,7 +1458,9 @@
 
     <script>
         const audio = new Audio();
+        audio.crossOrigin = 'anonymous';
         audio.preload = 'none';
+        window.__mmAudio = audio;
 
         const playBtn = document.getElementById('main-play-btn');
         const playerBar = document.getElementById('player-bar');
@@ -1455,7 +1478,7 @@
         const progressKnob = document.getElementById('player-progress-knob');
 
         const searchInputDesktop = document.getElementById('search-input-desktop');
-        const searchTriggerMobile = document.getElementById('search-trigger-mobile');
+        const searchInputMobile = document.getElementById('search-input-mobile');
         const searchResultsSection = document.getElementById('search-results-section');
         const searchResultsTitle = document.getElementById('search-results-title');
         const searchResultsList = document.getElementById('search-results-list');
@@ -1475,6 +1498,8 @@
         const recommendPageSection = document.getElementById('recommend-page-section');
         const bottomNavUser = document.getElementById('mobile-nav-user');
         const bottomNavHome = document.getElementById('mobile-nav-home');
+        const bottomNavPlaylists = document.getElementById('mobile-nav-playlists');
+        const bottomNavHot = document.getElementById('mobile-nav-hot');
 
         const volumeBtn = document.getElementById('player-volume-btn');
         const volumeBar = document.getElementById('player-volume-bar');
@@ -1512,10 +1537,13 @@
         const playerPageDot0 = document.getElementById('player-page-dot-0');
         const playerPageDot1 = document.getElementById('player-page-dot-1');
         const playerPageSingleLyric = document.getElementById('player-page-single-lyric');
+        const playerPageVisualizer = playerPageSection ? playerPageSection.querySelector('.mm-player-visualizer') : null;
+        const playerPageVisualizerBars = playerPageVisualizer ? Array.from(playerPageVisualizer.querySelectorAll('.bar')) : [];
 
         const queueModal = document.getElementById('queue-modal');
         const queueModalBackdrop = document.getElementById('queue-modal-backdrop');
         const queueModalClose = document.getElementById('queue-modal-close');
+        const queueModalWrap = document.getElementById('queue-modal-wrap');
         const queueModalList = document.getElementById('queue-modal-list');
         const queueModalEmpty = document.getElementById('queue-modal-empty');
         const playlistSelectModal = document.getElementById('playlist-select-modal');
@@ -1666,10 +1694,11 @@
             updatePlayModeUI();
         }
 
-        function setQueue(list, startIndex) {
+        function setQueue(list, startIndex, queueKey = '') {
             playQueue = Array.isArray(list) ? list.filter(Boolean) : [];
             const idx = Number(startIndex);
             queueIndex = Number.isFinite(idx) ? Math.max(-1, Math.min(playQueue.length - 1, idx)) : -1;
+            activeQueueKey = queueKey ? String(queueKey) : '';
         }
 
         function ensureQueueIndexForTrack(track) {
@@ -1784,20 +1813,28 @@
             if (icon) icon.innerText = isPlaying ? 'pause' : 'play_arrow';
         }
 
+        let activeQueueKey = '';
+
         function updateInlinePlayButtonsUI() {
             const curKey = currentTrack ? trackKey(currentTrack) : '';
             const playing = !!(audio.src && !audio.paused);
-            const btns = document.querySelectorAll('button[data-mm-play-btn="1"]');
+            const btns = document.querySelectorAll('[data-mm-play-btn="1"]');
             btns.forEach((btn) => {
+                const qk = btn.getAttribute('data-queue-key') || '';
                 const k = btn.getAttribute('data-track-key') || '';
+                if (qk) {
+                    setInlinePlayButtonIcon(btn, !!(playing && activeQueueKey && qk === activeQueueKey));
+                    return;
+                }
                 setInlinePlayButtonIcon(btn, !!(playing && curKey && k && k === curKey));
             });
         }
 
-        function setupTrackPlayButton(btn, track, queueList, queueIdx) {
+        function setupTrackPlayButton(btn, track, queueList, queueIdx, queueKey = '') {
             if (!btn) return;
             btn.setAttribute('data-mm-play-btn', '1');
             btn.setAttribute('data-track-key', trackKey(track) || '');
+            if (queueKey) btn.setAttribute('data-queue-key', String(queueKey));
             setInlinePlayButtonIcon(btn, !!(currentTrack && trackKey(track) === trackKey(currentTrack) && audio.src && !audio.paused));
 
             btn.addEventListener('click', async (e) => {
@@ -1806,6 +1843,7 @@
 
                 const same = !!(currentTrack && trackKey(track) === trackKey(currentTrack));
                 if (same && audio.src) {
+                    if (queueKey) activeQueueKey = String(queueKey);
                     try {
                         if (audio.paused) await audio.play();
                         else audio.pause();
@@ -1814,7 +1852,7 @@
                     return;
                 }
 
-                setQueue(queueList, queueIdx);
+                setQueue(queueList, queueIdx, queueKey);
                 try {
                     await playTrack(track);
                 } catch (err) {
@@ -2119,6 +2157,8 @@
             if (playerPageVinyl) {
                 playerPageVinyl.classList.toggle('is-playing', !audio.paused && !!audio.src);
             }
+            if (!audio.paused && !!audio.src) startPlayerPageVisualizer();
+            else stopPlayerPageVisualizer();
         }
 
         function updatePlayerPageModeUI() {
@@ -2137,6 +2177,93 @@
         let playerPageActivePointerId = null;
         let playerPageDragLocked = null;
         let playerPageIsDragging = false;
+
+        let playerPageVizCtx = null;
+        let playerPageVizAnalyser = null;
+        let playerPageVizSource = null;
+        let playerPageVizData = null;
+        let playerPageVizRaf = 0;
+
+        function stopPlayerPageVisualizer() {
+            if (playerPageVizRaf) cancelAnimationFrame(playerPageVizRaf);
+            playerPageVizRaf = 0;
+            if (!playerPageVisualizerBars.length) return;
+            for (const bar of playerPageVisualizerBars) {
+                if (bar) bar.style.height = '';
+            }
+        }
+
+        function ensurePlayerPageVisualizerGraph() {
+            if (!playerPageVisualizerBars.length) return false;
+            if (playerPageVizCtx && playerPageVizAnalyser && playerPageVizSource && playerPageVizData) return true;
+            const Ctx = window.AudioContext || window.webkitAudioContext;
+            if (!Ctx) return false;
+            try {
+                playerPageVizCtx = new Ctx();
+                playerPageVizAnalyser = playerPageVizCtx.createAnalyser();
+                playerPageVizAnalyser.fftSize = 256;
+                playerPageVizAnalyser.smoothingTimeConstant = 0.86;
+                playerPageVizSource = playerPageVizCtx.createMediaElementSource(audio);
+                playerPageVizSource.connect(playerPageVizAnalyser);
+                playerPageVizAnalyser.connect(playerPageVizCtx.destination);
+                playerPageVizData = new Uint8Array(playerPageVizAnalyser.frequencyBinCount);
+                return true;
+            } catch {
+                playerPageVizCtx = null;
+                playerPageVizAnalyser = null;
+                playerPageVizSource = null;
+                playerPageVizData = null;
+                return false;
+            }
+        }
+
+        function startPlayerPageVisualizer() {
+            if (!ensurePlayerPageVisualizerGraph()) return;
+            if (!playerPageVizCtx || !playerPageVizAnalyser || !playerPageVizData) return;
+            if (playerPageVizCtx.state === 'suspended') {
+                playerPageVizCtx.resume().catch(() => {});
+            }
+            if (playerPageVizRaf) return;
+
+            const bars = playerPageVisualizerBars;
+            const render = () => {
+                playerPageVizRaf = 0;
+                if (!playerPageVizAnalyser || !playerPageVizData) return;
+                const isPlaying = !audio.paused && !audio.ended;
+                playerPageVizAnalyser.getByteFrequencyData(playerPageVizData);
+
+                const nBars = bars.length || 12;
+                const binCount = playerPageVizData.length || 1;
+                const lowBin = Math.floor(binCount * 0.02);
+                const highBin = Math.max(lowBin + 1, Math.floor(binCount * 0.65));
+                const span = Math.max(1, highBin - lowBin);
+                const step = Math.max(1, Math.floor(span / nBars));
+                const maxH = 48;
+                const minH = 8;
+
+                for (let i = 0; i < nBars; i++) {
+                    const start = lowBin + i * step;
+                    const end = Math.min(highBin, start + step);
+                    let sum = 0;
+                    let c = 0;
+                    for (let j = start; j < end; j++) {
+                        sum += playerPageVizData[j] || 0;
+                        c += 1;
+                    }
+                    const avg = c ? sum / c : 0;
+                    const norm = Math.min(1, Math.max(0, avg / 255));
+                    const eased = norm ** 0.65;
+                    const h = isPlaying ? (minH + eased * (maxH - minH)) : minH;
+                    const bar = bars[i];
+                    if (bar) bar.style.height = `${Math.round(h)}px`;
+                }
+
+                if (isPlaying) playerPageVizRaf = requestAnimationFrame(render);
+                else stopPlayerPageVisualizer();
+            };
+
+            playerPageVizRaf = requestAnimationFrame(render);
+        }
 
         function updatePlayerPageDots() {
             if (!playerPageDot0 || !playerPageDot1) return;
@@ -2637,7 +2764,8 @@
             if (!currentTrack) {
                 playerPageTitle.innerText = '未播放';
                 playerPageArtist.innerText = '—';
-                playerPageMeta.innerText = '—';
+                playerPageMeta.innerText = '';
+                playerPageMeta.classList.add('hidden');
                 if (playerPageCover) playerPageCover.classList.add('hidden');
                 if (playerPageCoverFallback) playerPageCoverFallback.classList.remove('hidden');
                 resetPlayerPageLyricsState();
@@ -2648,12 +2776,19 @@
                 return;
             }
             playerPageTitle.innerText = currentTrack.name || '未知歌曲';
-            playerPageArtist.innerText = currentTrack.artist || '未知歌手';
+            const artist = currentTrack.artist || '未知歌手';
+            const album = currentTrack.album ? String(currentTrack.album).trim() : '';
+            playerPageArtist.innerText = album ? `${artist} - ${album}` : artist;
             const p = platformLabel(currentTrack.platform);
             const metaParts = [];
-            if (currentTrack.album) metaParts.push(currentTrack.album);
             if (p && p !== '酷狗') metaParts.push(p);
-            playerPageMeta.innerText = metaParts.length ? metaParts.join(' · ') : '—';
+            if (metaParts.length) {
+                playerPageMeta.innerText = metaParts.join(' · ');
+                playerPageMeta.classList.remove('hidden');
+            } else {
+                playerPageMeta.innerText = '';
+                playerPageMeta.classList.add('hidden');
+            }
 
             const coverUrl = proxify(currentTrack.coverUrl) || '';
             if (playerPageCover && coverUrl) {
@@ -3266,6 +3401,8 @@
         const homeCardDaily = document.getElementById('home-card-daily');
         const homeCardGuessSub = document.getElementById('home-card-guess-sub');
         const homeCardDailySub = document.getElementById('home-card-daily-sub');
+        const homeCardGuessPlay = document.getElementById('home-card-guess-play');
+        const homeCardDailyPlay = document.getElementById('home-card-daily-play');
 
         if (homeSlidePrev) {
             homeSlidePrev.addEventListener('click', (e) => {
@@ -3302,12 +3439,22 @@
             homeCardGuess.addEventListener('click', async () => {
                 const tracks = Array.isArray(homeGuessTracks) ? homeGuessTracks.filter(Boolean) : [];
                 if (!tracks.length) return;
-                setQueue(tracks, 0);
+                setQueue(tracks, 0, 'home:guess');
                 // openListResults('猜你喜欢', tracks);
                 try {
+                    const same = !!(currentTrack && trackKey(currentTrack) === trackKey(tracks[0]));
+                    if (same && audio.src) {
+                        activeQueueKey = 'home:guess';
+                        if (audio.paused) await audio.play();
+                        else audio.pause();
+                        updateInlinePlayButtonsUI();
+                        return;
+                    }
                     await playTrack(tracks[0]);
                 } catch (err) {
                     console.error(err);
+                } finally {
+                    updateInlinePlayButtonsUI();
                 }
             });
         }
@@ -3315,12 +3462,22 @@
             homeCardDaily.addEventListener('click', async () => {
                 const tracks = Array.isArray(homeDailyTracks) ? homeDailyTracks.filter(Boolean) : [];
                 if (!tracks.length) return;
-                setQueue(tracks, 0);
+                setQueue(tracks, 0, 'home:daily');
                 // openListResults('每日推荐', tracks);
                 try {
+                    const same = !!(currentTrack && trackKey(currentTrack) === trackKey(tracks[0]));
+                    if (same && audio.src) {
+                        activeQueueKey = 'home:daily';
+                        if (audio.paused) await audio.play();
+                        else audio.pause();
+                        updateInlinePlayButtonsUI();
+                        return;
+                    }
                     await playTrack(tracks[0]);
                 } catch (err) {
                     console.error(err);
+                } finally {
+                    updateInlinePlayButtonsUI();
                 }
             });
         }
@@ -3780,9 +3937,11 @@
                 img.alt = track.name || 'cover';
                 img.loading = 'lazy';
                 img.src = proxify(track.coverUrl) || '';
-                const overlay = document.createElement('div');
+                const overlay = document.createElement('button');
+                overlay.type = 'button';
                 overlay.className = 'absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition';
                 overlay.innerHTML = '<span class="material-icons text-white text-lg">play_arrow</span>';
+                setupTrackPlayButton(overlay, track, queueTracks, i);
                 coverWrap.appendChild(img);
                 coverWrap.appendChild(overlay);
 
@@ -3803,17 +3962,7 @@
                 play.type = 'button';
                 play.className = 'w-8 h-8 flex items-center justify-center rounded-full text-material-text-secondary hover:text-material-text hover:bg-material-text/5 transition';
                 play.innerHTML = '<span class="material-icons text-[20px]">play_arrow</span>';
-                play.addEventListener('click', async (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setQueue(queueTracks, i);
-                    try {
-                        await playTrack(track);
-                    } catch (err) {
-                        const msg = err instanceof Error && err.message ? err.message : '后端未启动或资源不可用';
-                        alert(`播放失败：${msg}`);
-                    }
-                });
+                setupTrackPlayButton(play, track, queueTracks, i);
                 const dl = document.createElement('button');
                 dl.type = 'button';
                 dl.className = 'w-8 h-8 flex items-center justify-center rounded-full text-material-text-secondary hover:text-material-text hover:bg-material-text/5 transition';
@@ -3836,10 +3985,13 @@
                     } catch (err) {
                         const msg = err instanceof Error && err.message ? err.message : '后端未启动或资源不可用';
                         alert(`播放失败：${msg}`);
+                    } finally {
+                        updateInlinePlayButtonsUI();
                     }
                 });
                 listEl.appendChild(row);
             }
+            updateInlinePlayButtonsUI();
         }
 
         function renderCharts(charts) {
@@ -4118,6 +4270,21 @@
                 artistsInitialBar.appendChild(btn);
             }
 
+            {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.dataset.initial = 'other';
+                btn.className = 'w-10 h-10 grid place-items-center text-sm rounded-lg transition bg-material-text/5 text-material-text-secondary hover:bg-material-text/10 hover:text-material-text';
+                btn.innerText = '其他';
+                btn.addEventListener('click', async () => {
+                    if (artistsBrowseState.loading) return;
+                    artistsBrowseState.initial = 'other';
+                    setArtistsInitialActive('other');
+                    await loadArtistsByInitial('other', { reset: true });
+                });
+                artistsInitialBar.appendChild(btn);
+            }
+
             setArtistsInitialActive(artistsBrowseState.initial);
 
             if (artistsLoadMore) {
@@ -4165,8 +4332,10 @@
         }
 
         async function fetchKuGouArtistsByInitial(initial, page, pagesize) {
-            const letter = String(initial || '').toUpperCase();
+            const raw = String(initial || '');
+            const letter = raw.toUpperCase();
             if (!letter) return { items: [], total: 0 };
+            const isOther = raw.toLowerCase() === 'other';
 
             const ALL_KEY = '__ALL__';
             if (!artistsByInitialCache.has(ALL_KEY)) {
@@ -4181,7 +4350,15 @@
             }
 
             const all = artistsByInitialCache.get(ALL_KEY) || [];
-            const filtered = all.filter((a) => String(a?.initial || '').toUpperCase() === letter);
+            const filtered = all.filter((a) => {
+                const ini = String(a?.initial || '').trim();
+                const up = ini.toUpperCase();
+                if (isOther) {
+                    if (ini === '热门') return false;
+                    return !(up.length === 1 && up >= 'A' && up <= 'Z');
+                }
+                return up === letter;
+            });
 
             const start = (Number(page) - 1) * Number(pagesize);
             const end = start + Number(pagesize);
@@ -4835,6 +5012,10 @@
                         guessTracks = shuffleArray(guessTracks).slice(0, 40);
                         
                         homeGuessTracks = guessTracks;
+                        if (homeCardGuessPlay && guessTracks[0] && homeCardGuessPlay.getAttribute('data-mm-home-bound') !== '1') {
+                            homeCardGuessPlay.setAttribute('data-mm-home-bound', '1');
+                            setupTrackPlayButton(homeCardGuessPlay, guessTracks[0], guessTracks, 0, 'home:guess');
+                        }
                         if (homeCardGuessSub) {
                             const first = guessTracks[0];
                             homeCardGuessSub.innerText = first ? `共 ${guessTracks.length} 首 · ${first.name || ''}${first.artist ? ' · ' + first.artist : ''}` : '暂无推荐';
@@ -4888,6 +5069,10 @@
                         .map((it) => normalizeAnySongToTrack(it?.song || it))
                         .filter(Boolean);
                     homeDailyTracks = shuffleArray(tracks).slice(0, 40);
+                    if (homeCardDailyPlay && homeDailyTracks[0] && homeCardDailyPlay.getAttribute('data-mm-home-bound') !== '1') {
+                        homeCardDailyPlay.setAttribute('data-mm-home-bound', '1');
+                        setupTrackPlayButton(homeCardDailyPlay, homeDailyTracks[0], homeDailyTracks, 0, 'home:daily');
+                    }
                     if (homeCardDailySub) {
                         const first = tracks[0];
                         homeCardDailySub.innerText = first ? `${first.name || ''}${first.artist ? ' · ' + first.artist : ''}` : '暂无推荐';
@@ -5019,10 +5204,9 @@
             });
         }
 
-        if (searchTriggerMobile) {
-            searchTriggerMobile.addEventListener('click', async () => {
-                const kw = window.prompt('搜索在线音乐');
-                if (kw) doSearch(kw);
+        if (searchInputMobile) {
+            searchInputMobile.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') doSearch(searchInputMobile.value);
             });
         }
 
@@ -5036,6 +5220,7 @@
             const desktopLinks = [navRecommend, navPlaylistSquare, navRadio, navArtists, navLiked, navDownloads, navRecent];
             const topTabs = [topTabRecommend, topTabPlaylists, topTabHot, topTabCharts, topTabArtists];
             const mobileTabs = [mobileTabRecommend, mobileTabPlaylists, mobileTabHot, mobileTabCharts, mobileTabArtists];
+            const bottomNavLinks = [bottomNavHome, bottomNavPlaylists, bottomNavHot, bottomNavUser];
 
             const isPath = (p) => path === p;
             const isAnyPath = (...paths) => paths.includes(path);
@@ -5055,6 +5240,11 @@
                 el.classList.remove('text-material-text', 'font-bold', 'border-b-2', 'border-material-primary');
                 el.classList.add('text-material-text-secondary', 'font-medium');
             });
+            bottomNavLinks.forEach((el) => {
+                if (!el) return;
+                el.classList.remove('text-material-primary', 'text-material-text');
+                el.classList.add('text-material-text-secondary');
+            });
 
             const markActive = (el) => {
                 if (!el) return;
@@ -5066,19 +5256,27 @@
                     el.classList.remove('text-material-text-secondary', 'font-medium');
                 }
             };
+            const markBottomActive = (el) => {
+                if (!el) return;
+                el.classList.add('text-material-primary');
+                el.classList.remove('text-material-text-secondary', 'text-material-text');
+            };
 
             if (isAnyPath('/', '/recommend')) {
                 markActive(navRecommend);
                 markActive(mobileTabRecommend);
                 markActive(topTabRecommend);
+                markBottomActive(bottomNavHome);
             } else if (isAnyPath('/playlists', '/playlist-square')) {
                 markActive(navPlaylistSquare);
                 markActive(mobileTabPlaylists);
                 markActive(topTabPlaylists);
+                markBottomActive(bottomNavPlaylists);
             } else if (isPath('/hot')) {
                 markActive(navRadio);
                 markActive(mobileTabHot);
                 markActive(topTabHot);
+                markBottomActive(bottomNavHot);
             } else if (isPath('/charts')) {
                 markActive(mobileTabCharts);
                 markActive(topTabCharts);
@@ -5088,10 +5286,15 @@
                 markActive(topTabArtists);
             } else if (isPath('/favorites')) {
                 markActive(navLiked);
+                markBottomActive(bottomNavUser);
             } else if (isPath('/downloads')) {
                 markActive(navDownloads);
+                markBottomActive(bottomNavUser);
             } else if (isPath('/recent')) {
                 markActive(navRecent);
+                markBottomActive(bottomNavUser);
+            } else if (isPath('/login')) {
+                markBottomActive(bottomNavUser);
             }
         }
 
@@ -5479,6 +5682,9 @@
         if (playerQueueBtn) playerQueueBtn.addEventListener('click', openQueueModal);
         if (queueModalBackdrop) queueModalBackdrop.addEventListener('click', closeQueueModal);
         if (queueModalClose) queueModalClose.addEventListener('click', closeQueueModal);
+        if (queueModalWrap) queueModalWrap.addEventListener('click', (e) => {
+            if (e.target === queueModalWrap) closeQueueModal();
+        });
         document.addEventListener('keydown', (e) => {
             if (e.key !== 'Escape') return;
             if (isQueueModalOpen()) closeQueueModal();
@@ -5582,15 +5788,18 @@
         audio.addEventListener('play', () => {
             setPlayIcon(true);
             updateInlinePlayButtonsUI();
+            notifyNativePlaying(true);
         });
         audio.addEventListener('pause', () => {
             setPlayIcon(false);
             updateInlinePlayButtonsUI();
+            notifyNativePlaying(false);
         });
         audio.addEventListener('play', updatePlayerPagePlayUI);
         audio.addEventListener('pause', updatePlayerPagePlayUI);
         audio.addEventListener('ended', () => {
             setPlayIcon(false);
+            notifyNativePlaying(false);
             skip(1, true);
         });
 
@@ -5610,6 +5819,14 @@
             try {
                 if (window.MagicMusicAndroid && typeof window.MagicMusicAndroid.setTheme === 'function') {
                     window.MagicMusicAndroid.setTheme(isLight ? 'light' : 'dark');
+                }
+            } catch {}
+        }
+
+        function notifyNativePlaying(isPlaying) {
+            try {
+                if (window.MagicMusicAndroid && typeof window.MagicMusicAndroid.setPlaying === 'function') {
+                    window.MagicMusicAndroid.setPlaying(isPlaying ? '1' : '0');
                 }
             } catch {}
         }
@@ -5832,23 +6049,23 @@
         updatePlayerBarUI();
         updateProgressUI();
         window.addEventListener('DOMContentLoaded', () => {
-            const copyrightBtn = document.getElementById('copyright-btn');
+            const btns = [
+                document.getElementById('copyright-btn'),
+                document.getElementById('copyright-btn-mobile'),
+            ].filter(Boolean);
             const copyrightModal = document.getElementById('copyright-modal');
             const copyrightClose = document.getElementById('copyright-modal-close');
 
-            if (copyrightBtn && copyrightModal && copyrightClose) {
-                copyrightBtn.addEventListener('click', () => {
-                    copyrightModal.classList.add('open');
-                });
-                copyrightClose.addEventListener('click', () => {
+            if (!btns.length || !copyrightModal || !copyrightClose) return;
+            btns.forEach((b) => b.addEventListener('click', () => copyrightModal.classList.add('open')));
+            copyrightClose.addEventListener('click', () => {
+                copyrightModal.classList.remove('open');
+            });
+            copyrightModal.addEventListener('click', (e) => {
+                if (e.target === copyrightModal) {
                     copyrightModal.classList.remove('open');
-                });
-                copyrightModal.addEventListener('click', (e) => {
-                    if (e.target === copyrightModal) {
-                        copyrightModal.classList.remove('open');
-                    }
-                });
-            }
+                }
+            });
         });
     </script>
     <!-- Copyright Modal -->
