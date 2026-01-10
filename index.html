@@ -278,6 +278,13 @@
             touch-action: pan-x;
         }
 
+        #player-page-carousel-track > div:first-child,
+        #player-page-vinyl,
+        #player-page-single-lyric,
+        #player-page-carousel .mm-player-visualizer {
+            touch-action: pan-x;
+        }
+
         #player-page-carousel {
             overflow-x: hidden !important;
             overflow-y: visible !important;
@@ -2453,8 +2460,8 @@
 
                 const nBars = bars.length || 12;
                 const binCount = playerPageVizData.length || 1;
-                const lowBin = Math.floor(binCount * 0.02);
-                const highBin = Math.max(lowBin + 1, Math.floor(binCount * 0.65));
+                const lowBin = Math.floor(binCount * 0.01);
+                const highBin = Math.max(lowBin + 1, Math.floor(binCount * 0.92));
                 const span = Math.max(1, highBin - lowBin);
                 const step = Math.max(1, Math.floor(span / nBars));
                 const maxH = 48;
@@ -2475,9 +2482,8 @@
                     const avg = c ? sum / c : 0;
                     const norm = Math.min(1, Math.max(0, avg / 255));
                     const eased = norm ** 0.65;
-                    const h = isPlaying ? (minH + eased * (maxH - minH)) : minH;
                     const bar = bars[i];
-                    if (bar) bar.style.height = `${Math.round(h)}px`;
+                    if (bar) bar.style.height = `${Math.round(isPlaying ? (minH + eased * (maxH - minH)) : minH)}px`;
                 }
 
                 if (isPlaying) {
@@ -2555,7 +2561,6 @@
 
             const onPointerDown = (e) => {
                 if (!isMobile()) return;
-                if (!e.isPrimary) return;
                 if (playerPagePointerDown) return;
                 playerPagePointerDown = true;
                 playerPageActivePointerId = e.pointerId;
@@ -2579,7 +2584,7 @@
                     const adx = Math.abs(dx);
                     const ady = Math.abs(dy);
                     if (adx < 10 && ady < 10) return;
-                    playerPageDragLocked = adx > ady ? 'x' : 'y';
+                    playerPageDragLocked = adx > ady * 0.6 ? 'x' : 'y';
                 }
 
                 if (playerPageDragLocked !== 'x') return;
@@ -2601,7 +2606,7 @@
                 const absDx = Math.abs(dx);
                 const absDy = Math.abs(dy);
 
-                if (!playerPageIsDragging || absDx < 20 || absDx < absDy) {
+                if (!playerPageIsDragging || absDx < 20 || absDx < absDy * 0.6) {
                     setPlayerPageView(playerPageViewIndex, true);
                     playerPageIsDragging = false;
                     playerPageDragLocked = null;
@@ -3010,6 +3015,10 @@
             const artist = currentTrack.artist || '未知歌手';
             const album = currentTrack.album ? String(currentTrack.album).trim() : '';
             playerPageArtist.innerText = album ? `${artist} - ${album}` : artist;
+            if (isAndroidApp) {
+                playerPageMeta.innerText = '';
+                playerPageMeta.classList.add('hidden');
+            } else {
             const p = platformLabel(currentTrack.platform);
             const metaParts = [];
             if (p && p !== '酷狗') metaParts.push(p);
@@ -3019,6 +3028,7 @@
             } else {
                 playerPageMeta.innerText = '';
                 playerPageMeta.classList.add('hidden');
+            }
             }
 
             const coverUrl = proxify(currentTrack.coverUrl) || '';
