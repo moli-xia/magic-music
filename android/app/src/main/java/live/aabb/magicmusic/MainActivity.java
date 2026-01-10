@@ -216,11 +216,12 @@ public class MainActivity extends AppCompatActivity {
             everHadAudioFocusForThisPlayback = true;
             return;
           }
-          if (focusChange == AudioManager.AUDIOFOCUS_LOSS) {
+          if (focusChange == AudioManager.AUDIOFOCUS_LOSS
+              || focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) {
             hasAudioFocus = false;
             if (!playbackActive) return;
             long now = android.os.SystemClock.elapsedRealtime();
-            if (!everHadAudioFocusForThisPlayback && now - playbackActivatedAtMs < 2500L) return;
+            if (now - playbackActivatedAtMs < 2500L) return;
             runOnUiThread(
                 () -> {
                   if (webView == null) return;
@@ -228,6 +229,10 @@ public class MainActivity extends AppCompatActivity {
                       "try{if(window.__mmAudio && !window.__mmAudio.paused){window.__mmAudio.pause();}}catch(e){}",
                       null);
                 });
+            return;
+          }
+          if (focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK) {
+            hasAudioFocus = false;
           }
         };
 
