@@ -2585,6 +2585,15 @@
         let playerPageWaveRaf = 0;
         let playerPageWaveCtx2d = null;
         let playerPageWaveParticles = [];
+        let playerPageWaveAudioCtx = null;
+        let playerPageWaveAnalyser = null;
+        let playerPageWaveSource = null;
+        let playerPageWaveTime = null;
+        let playerPageWaveFreq = null;
+        let playerPageWaveEnergy = 0;
+        let playerPageWaveEnergyAvg = 0;
+        let playerPageWaveBeat = 0;
+        let playerPageWaveLastBeatAt = 0;
 
         function stopPlayerPageWave() {
             if (playerPageWaveRaf) cancelAnimationFrame(playerPageWaveRaf);
@@ -2633,6 +2642,40 @@
             return true;
         }
 
+        function ensurePlayerPageWaveAudioGraph() {
+            if (playerPageWaveAudioCtx && playerPageWaveAnalyser && playerPageWaveSource && playerPageWaveTime && playerPageWaveFreq) return true;
+            const Ctx = window.AudioContext || window.webkitAudioContext;
+            if (!Ctx) return false;
+            try {
+                const ctx = playerPageWaveAudioCtx || new Ctx();
+                const analyser = ctx.createAnalyser();
+                analyser.fftSize = 1024;
+                analyser.smoothingTimeConstant = 0.72;
+
+                const source = ctx.createMediaElementSource(audio);
+                source.connect(analyser);
+                source.connect(ctx.destination);
+
+                playerPageWaveAudioCtx = ctx;
+                playerPageWaveAnalyser = analyser;
+                playerPageWaveSource = source;
+                playerPageWaveTime = new Uint8Array(analyser.fftSize);
+                playerPageWaveFreq = new Uint8Array(analyser.frequencyBinCount);
+                playerPageWaveEnergy = 0;
+                playerPageWaveEnergyAvg = 0;
+                playerPageWaveBeat = 0;
+                playerPageWaveLastBeatAt = 0;
+                return true;
+            } catch {
+                playerPageWaveAudioCtx = null;
+                playerPageWaveAnalyser = null;
+                playerPageWaveSource = null;
+                playerPageWaveTime = null;
+                playerPageWaveFreq = null;
+                return false;
+            }
+        }
+
         function startPlayerPageWave() {
             if (!ensurePlayerPageWaveCanvas()) return;
             if (playerPageWaveRaf) return;
@@ -2646,63 +2689,130 @@
                 if (!ensurePlayerPageWaveCanvas()) return;
                 const w = Math.max(1, playerPageWaveCanvas.clientWidth || 1);
                 const h = Math.max(1, playerPageWaveCanvas.clientHeight || 1);
-                const cx = w / 2;
                 const cy = h / 2;
 
                 const playing = !audio.paused && !!audio.src && !audio.ended;
                 const t = (performance.now() || 0) / 1000;
-                const ct = (() => { try { return Number(audio.currentTime || 0); } catch { return 0; } })();
-                const speed = playing ? 1 : 0.45;
-                const phase = (t * 2.2 * speed) + (ct * 0.35);
-                const amp = (playing ? 1 : 0.55) * (0.35 + 0.25 * Math.sin(phase * 1.2) + 0.15 * Math.sin(phase * 2.1));
-                const a = Math.max(0.12, Math.min(1, amp));
+                const okGraph = ensurePlayerPageWaveAudioGraph();
+                if (okGraph && playerPageWaveAudioCtx && playerPageWaveAudioCtx.state === 'suspended') {
+                    playerPageWaveAudioCtx.resume().catch(() => {});
+                }
 
+                let a = 0.35;
+                let beat = playerPageWaveBeat;
+                if (okGraph && playerPageWaveAnalyser && playerPageWaveTime && playerPageWaveFreq) {
+                    try {
+                        playerPageWaveAnalyser.getByteTimeDomainData(playerPageWaveTime);
+                        playerPageWaveAnalyser.getByteFrequencyData(playerPageWaveFreq);
+                    } catch {}
+
+                    const bins = playerPageWaveFreq.length || 1;
+                    const bassEnd = Math.max(2, Math.floor(bins * 0.12));
+                    let sum = 0;
+                    for (let i = 0; i < bassEnd; i++) sum += playerPageWaveFreq[i] || 0;
+                    const bass = sum / bassEnd;
+
+                    const e = Math.max(0, Math.min(1, bass / 255));
+                    playerPageWaveEnergy = playerPageWaveEnergy * 0.78 + e * 0.22;
+                    playerPageWaveEnergyAvg = playerPageWaveEnergyAvg * 0.96 + playerPageWaveEnergy * 0.04;
+                    a = Math.max(0.10, Math.min(1, 0.10 + playerPageWaveEnergy * 1.35));
+
+                    const now = performance.now() || 0;
+                    const cooldownMs = 160;
+                    const threshold = Math.max(0.10, playerPageWaveEnergyAvg * 1.55);
+                    if (playing && now - playerPageWaveLastBeatAt > cooldownMs && playerPageWaveEnergy > threshold) {
+                        playerPageWaveLastBeatAt = now;
+                        playerPageWaveBeat = 1;
+                        beat = 1;
+                    } else {
+                        playerPageWaveBeat = Math.max(0, playerPageWaveBeat - 0.06);
+                        beat = playerPageWaveBeat;
+                    }
+                } else {
+                    const phase = t * 2.2;
+                    const amp = (playing ? 1 : 0.55) * (0.35 + 0.25 * Math.sin(phase * 1.2) + 0.15 * Math.sin(phase * 2.1));
+                    a = Math.max(0.12, Math.min(1, amp));
+                    playerPageWaveBeat = Math.max(0, playerPageWaveBeat - 0.06);
+                    beat = playerPageWaveBeat;
+                }
+
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.globalAlpha = 0.22 + a * 0.10;
+                ctx.fillStyle = 'rgba(0,0,0,0)';
                 ctx.clearRect(0, 0, w, h);
+                ctx.globalAlpha = 1;
                 ctx.globalCompositeOperation = 'lighter';
 
                 const grad = ctx.createLinearGradient(0, 0, w, 0);
-                grad.addColorStop(0, `rgba(${r},${g},${b},${0.10 + a * 0.15})`);
-                grad.addColorStop(0.5, `rgba(${Math.min(255, r + 60)},${Math.min(255, g + 40)},${Math.min(255, b + 20)},${0.18 + a * 0.22})`);
-                grad.addColorStop(1, `rgba(${r},${g},${b},${0.10 + a * 0.15})`);
+                grad.addColorStop(0, `rgba(${r},${g},${b},${0.08 + a * 0.18})`);
+                grad.addColorStop(0.5, `rgba(${Math.min(255, r + 70)},${Math.min(255, g + 55)},${Math.min(255, b + 35)},${0.16 + a * 0.30 + beat * 0.22})`);
+                grad.addColorStop(1, `rgba(${r},${g},${b},${0.08 + a * 0.18})`);
 
-                const baseAmp = (h * 0.38) * a;
                 const step = 2;
-                const drawWave = (lw, alpha, blur, f1, f2, s1, s2, yOff = 0) => {
+                const baseAmp = (h * 0.40) * (0.45 + a * 0.85) * (1 + beat * 0.7);
+                const shadow = 8 + a * 14 + beat * 18;
+
+                const drawDomainWave = (lw, alpha, blur, yOff = 0, skew = 0) => {
                     ctx.lineWidth = lw;
                     ctx.strokeStyle = grad;
                     ctx.globalAlpha = alpha;
                     ctx.shadowColor = `rgba(${r},${g},${b},${0.25 + a * 0.35})`;
                     ctx.shadowBlur = blur;
                     ctx.beginPath();
-                    for (let x = 0; x <= w; x += step) {
-                        const p = x / w;
-                        const env = Math.sin(Math.PI * p);
-                        const y =
-                            cy + yOff
-                            + (Math.sin((p * f1) + phase * s1) + 0.55 * Math.sin((p * f2) - phase * s2)) * baseAmp * env;
-                        if (x === 0) ctx.moveTo(x, y);
-                        else ctx.lineTo(x, y);
+                    if (okGraph && playerPageWaveTime) {
+                        const n = playerPageWaveTime.length || 1;
+                        for (let x = 0; x <= w; x += step) {
+                            const p = x / w;
+                            const idx = Math.min(n - 1, Math.floor(p * (n - 1)));
+                            const v = ((playerPageWaveTime[idx] || 128) - 128) / 128;
+                            const env = Math.sin(Math.PI * p);
+                            const y = cy + yOff + v * baseAmp * env + Math.sin(p * 12 + t * 2.2) * (baseAmp * 0.06) + skew * (p - 0.5) * (h * 0.08);
+                            if (x === 0) ctx.moveTo(x, y);
+                            else ctx.lineTo(x, y);
+                        }
+                    } else {
+                        for (let x = 0; x <= w; x += step) {
+                            const p = x / w;
+                            const env = Math.sin(Math.PI * p);
+                            const v = Math.sin(p * 14 + t * 2.4) + 0.55 * Math.sin(p * 30 - t * 1.7);
+                            const y = cy + yOff + v * baseAmp * 0.22 * env + skew * (p - 0.5) * (h * 0.08);
+                            if (x === 0) ctx.moveTo(x, y);
+                            else ctx.lineTo(x, y);
+                        }
                     }
                     ctx.stroke();
                 };
 
-                drawWave(7, 0.08 + a * 0.07, 18, 10.5, 25.0, 1.15, 0.85, 0);
-                drawWave(4, 0.16 + a * 0.10, 10, 12.0, 28.0, 1.25, 0.92, 0);
-                drawWave(2, 0.24 + a * 0.12, 6, 14.0, 31.0, 1.35, 1.00, 0);
+                drawDomainWave(9, 0.05 + a * 0.08, shadow + 18, 0, -0.25);
+                drawDomainWave(5, 0.12 + a * 0.12, shadow + 10, 0, 0.18);
+                drawDomainWave(2.5, 0.22 + a * 0.12 + beat * 0.08, shadow + 6, 0, 0);
 
-                const spawnRate = playing ? (0.6 + a * 2.4) : 0.35;
-                if (Math.random() < spawnRate * 0.06 && playerPageWaveParticles.length < 28) {
+                if (beat > 0.001) {
+                    const pr = Math.min(255, r + 85);
+                    const pg = Math.min(255, g + 70);
+                    const pb = Math.min(255, b + 45);
+                    ctx.shadowBlur = 0;
+                    ctx.globalAlpha = 0.08 + beat * 0.10;
+                    ctx.strokeStyle = `rgba(${pr},${pg},${pb},1)`;
+                    ctx.lineWidth = 1.6 + beat * 2.0;
+                    ctx.beginPath();
+                    ctx.arc(w * 0.5, cy, Math.min(w, h) * (0.18 + beat * 0.25), 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+
+                const spawnRate = playing ? (0.3 + a * 3.2 + beat * 3.0) : 0.25;
+                if (Math.random() < spawnRate * 0.05 && playerPageWaveParticles.length < 36) {
                     const px = Math.random() * w;
-                    const py = cy + (Math.random() - 0.5) * baseAmp * 0.9;
+                    const py = cy + (Math.random() - 0.5) * baseAmp * 0.75;
                     const dir = Math.random() < 0.5 ? -1 : 1;
                     playerPageWaveParticles.push({
                         x: px,
                         y: py,
-                        vx: dir * (22 + Math.random() * 46),
-                        vy: (Math.random() - 0.5) * (22 + Math.random() * 40),
-                        life: 0.55 + Math.random() * 0.55,
+                        vx: dir * (26 + Math.random() * 70) * (0.6 + a * 0.9 + beat * 0.6),
+                        vy: (Math.random() - 0.5) * (18 + Math.random() * 56) * (0.7 + a * 0.7),
+                        life: 0.45 + Math.random() * 0.75,
                         age: 0,
-                        s: 1 + Math.random() * 2.5,
+                        s: 0.9 + Math.random() * 2.9,
                     });
                 }
 
@@ -2722,7 +2832,7 @@
                     const pr = Math.min(255, r + 90);
                     const pg = Math.min(255, g + 70);
                     const pb = Math.min(255, b + 35);
-                    ctx.globalAlpha = Math.max(0, Math.min(1, k)) * (0.08 + a * 0.10);
+                    ctx.globalAlpha = Math.max(0, Math.min(1, k)) * (0.06 + a * 0.12 + beat * 0.10);
                     ctx.fillStyle = `rgba(${pr},${pg},${pb},1)`;
                     ctx.beginPath();
                     ctx.arc(p.x, p.y, p.s * (0.6 + 0.9 * k), 0, Math.PI * 2);
