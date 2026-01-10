@@ -37,6 +37,7 @@ public class MainActivity extends AppCompatActivity {
   private boolean hasAudioFocus = false;
   private boolean everHadAudioFocusForThisPlayback = false;
   private long playbackActivatedAtMs = 0L;
+  private boolean themeObserverInjected = false;
 
   @SuppressLint("SetJavaScriptEnabled")
   @Override
@@ -118,9 +119,18 @@ public class MainActivity extends AppCompatActivity {
           }
 
           @Override
+          public void onPageStarted(WebView view, String url, android.graphics.Bitmap favicon) {
+            super.onPageStarted(view, url, favicon);
+            themeObserverInjected = false;
+          }
+
+          @Override
           public void onPageFinished(WebView view, String url) {
             super.onPageFinished(view, url);
-            injectThemeObserver(view);
+            if (!themeObserverInjected) {
+              injectThemeObserver(view);
+              themeObserverInjected = true;
+            }
           }
         });
 
