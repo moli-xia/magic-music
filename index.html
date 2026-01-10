@@ -281,7 +281,7 @@
         #player-page-carousel-track > div:first-child,
         #player-page-vinyl,
         #player-page-single-lyric,
-        #player-page-carousel .mm-player-visualizer {
+        #player-page-carousel .mm-player-wave {
             touch-action: pan-x;
         }
 
@@ -515,7 +515,7 @@
                 padding-bottom: 34px !important;
             }
 
-            body.mm-player-page-open #player-page-section .mm-player-visualizer {
+            body.mm-player-page-open #player-page-section .mm-player-wave {
                 margin-top: 20px;
             }
 
@@ -821,20 +821,14 @@
                 inset 0 0 0 1px rgba(0,0,0,0.10);
         }
         
-        .mm-player-visualizer {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 64px;
+        .mm-player-wave {
+            width: min(420px, 78vw);
+            height: 56px;
             margin-top: 18px;
             margin-bottom: 4px;
-            width: 100%;
-            max-width: 100%;
-        }
-        #player-visualizer-canvas {
-            width: 100%;
-            height: 100%;
+            opacity: 0.95;
             display: block;
+            filter: drop-shadow(0 8px 14px rgba(0,0,0,0.35));
         }
         .home-radio-card-guess {
             --mm-c1: rgba(124, 58, 237, 0.95);
@@ -1312,10 +1306,7 @@
                                                 <div class="mm-vinyl-hole"></div>
                                             </div>
                                             
-                                            <!-- Volume Visualizer -->
-                                            <div class="mm-player-visualizer">
-                                                <canvas id="player-visualizer-canvas"></canvas>
-                                            </div>
+                                            <canvas id="player-wave-canvas" class="mm-player-wave"></canvas>
 
                                             <!-- Single line lyric display -->
                                             <div id="player-page-single-lyric" class="mt-6 md:mt-8 text-center text-3xl md:text-4xl font-bold min-h-[3rem] px-4 line-clamp-2 transition-opacity duration-300"></div>
@@ -1947,16 +1938,7 @@
         const playerPageDot0 = document.getElementById('player-page-dot-0');
         const playerPageDot1 = document.getElementById('player-page-dot-1');
         const playerPageSingleLyric = document.getElementById('player-page-single-lyric');
-        const playerPageVisualizer = playerPageSection ? playerPageSection.querySelector('.mm-player-visualizer') : null;
-        const playerPageVisualizerBars = playerPageVisualizer ? Array.from(playerPageVisualizer.querySelectorAll('.bar')) : [];
-        if (isAndroidApp && playerPageVisualizerBars.length) {
-            const n = playerPageVisualizerBars.length;
-            const half = Math.ceil(n / 2);
-            for (let i = half; i < n; i++) {
-                const bar = playerPageVisualizerBars[i];
-                if (bar) bar.style.display = 'none';
-            }
-        }
+        const playerPageWaveCanvas = document.getElementById('player-wave-canvas');
 
         const queueModal = document.getElementById('queue-modal');
         const queueModalBackdrop = document.getElementById('queue-modal-backdrop');
@@ -2579,8 +2561,8 @@
             if (playerPageVinyl) {
                 playerPageVinyl.classList.toggle('is-playing', !audio.paused && !!audio.src);
             }
-            if (!audio.paused && !!audio.src) startPlayerPageVisualizer();
-            else stopPlayerPageVisualizer();
+            if (!audio.paused && !!audio.src) startPlayerPageWave();
+            else stopPlayerPageWave();
         }
 
         function updatePlayerPageModeUI() {
@@ -2600,176 +2582,161 @@
         let playerPageDragLocked = null;
         let playerPageIsDragging = false;
 
-        let playerPageVizCtx = null;
-        let playerPageVizAnalyser = null;
-        let playerPageVizSource = null;
-        let playerPageVizData = null;
-        let playerPageVizRaf = 0;
-        let playerPageVizSilentFrames = 0;
-        let playerPageVizCanvas = null;
-        let playerPageVizCanvasCtx = null;
+        let playerPageWaveRaf = 0;
+        let playerPageWaveCtx2d = null;
+        let playerPageWaveParticles = [];
 
-        function stopPlayerPageVisualizer() {
-            if (playerPageVizRaf) cancelAnimationFrame(playerPageVizRaf);
-            playerPageVizRaf = 0;
-            playerPageVizSilentFrames = 0;
-            if (playerPageVizCanvas && playerPageVizCanvasCtx) {
-                playerPageVizCanvasCtx.clearRect(0, 0, playerPageVizCanvas.width, playerPageVizCanvas.height);
+        function stopPlayerPageWave() {
+            if (playerPageWaveRaf) cancelAnimationFrame(playerPageWaveRaf);
+            playerPageWaveRaf = 0;
+            if (playerPageWaveCtx2d && playerPageWaveCanvas) {
+                const w = playerPageWaveCanvas.clientWidth || 1;
+                const h = playerPageWaveCanvas.clientHeight || 1;
+                playerPageWaveCtx2d.clearRect(0, 0, w, h);
             }
+            playerPageWaveParticles = [];
         }
 
-        function ensurePlayerPageVisualizerGraph() {
-            if (playerPageVizCtx && playerPageVizAnalyser && playerPageVizSource && playerPageVizData) return true;
-            const Ctx = window.AudioContext || window.webkitAudioContext;
-            if (!Ctx) return false;
+        function getMmPrimaryRgb() {
             try {
-                playerPageVizCtx = new Ctx();
-                playerPageVizAnalyser = playerPageVizCtx.createAnalyser();
-                playerPageVizAnalyser.fftSize = 256;
-                playerPageVizAnalyser.smoothingTimeConstant = 0.65;
-                const stream = (() => {
-                    try {
-                        if (typeof audio.captureStream === 'function') return audio.captureStream();
-                        if (typeof audio.mozCaptureStream === 'function') return audio.mozCaptureStream();
-                        return null;
-                    } catch {
-                        return null;
-                    }
-                })();
-                if (stream && typeof playerPageVizCtx.createMediaStreamSource === 'function') {
-                    playerPageVizSource = playerPageVizCtx.createMediaStreamSource(stream);
-                    playerPageVizSource.connect(playerPageVizAnalyser);
-                } else {
-                    if (isAndroidApp) {
-                        // Fallback: Android WebView might fail captureStream. 
-                        // We continue without source to allow simulation in render()
-                        console.log('Android visualizer fallback: no captureStream');
-                    } else {
-                        playerPageVizSource = playerPageVizCtx.createMediaElementSource(audio);
-                        playerPageVizSource.connect(playerPageVizAnalyser);
-                        playerPageVizAnalyser.connect(playerPageVizCtx.destination);
-                    }
-                }
-                playerPageVizData = new Uint8Array(playerPageVizAnalyser.frequencyBinCount);
-                return true;
+                const raw = String(getComputedStyle(document.documentElement).getPropertyValue('--primary-color') || '').trim();
+                const parts = raw.split(/[\s,\/]+/).map((s) => Number(s)).filter((n) => Number.isFinite(n));
+                const r = Math.max(0, Math.min(255, parts[0] ?? 124));
+                const g = Math.max(0, Math.min(255, parts[1] ?? 58));
+                const b = Math.max(0, Math.min(255, parts[2] ?? 237));
+                return { r, g, b };
             } catch {
-                // If context creation fails, we can still run simulation
-                return false;
+                return { r: 124, g: 58, b: 237 };
             }
         }
 
-        function startPlayerPageVisualizer() {
-            playerPageVizSilentFrames = 0;
-            ensurePlayerPageVisualizerGraph();
-            
-            playerPageVizCanvas = document.getElementById('player-visualizer-canvas');
-            if (!playerPageVizCanvas) return;
-            
-            const dpr = window.devicePixelRatio || 1;
-            const rect = playerPageVizCanvas.getBoundingClientRect();
-            if (playerPageVizCanvas.width !== rect.width * dpr || playerPageVizCanvas.height !== rect.height * dpr) {
-                playerPageVizCanvas.width = rect.width * dpr;
-                playerPageVizCanvas.height = rect.height * dpr;
+        function ensurePlayerPageWaveCanvas() {
+            if (!playerPageWaveCanvas) return false;
+            if (!playerPageWaveCtx2d) {
+                try {
+                    playerPageWaveCtx2d = playerPageWaveCanvas.getContext('2d', { alpha: true, desynchronized: true });
+                } catch {
+                    playerPageWaveCtx2d = null;
+                }
             }
-            playerPageVizCanvasCtx = playerPageVizCanvas.getContext('2d');
-
-            if (playerPageVizCtx && playerPageVizCtx.state === 'suspended') {
-                playerPageVizCtx.resume().catch(() => {});
+            if (!playerPageWaveCtx2d) return false;
+            const dpr = Math.max(1, Math.min(3, window.devicePixelRatio || 1));
+            const w = Math.max(1, Math.floor(playerPageWaveCanvas.clientWidth || 1));
+            const h = Math.max(1, Math.floor(playerPageWaveCanvas.clientHeight || 1));
+            const pw = Math.max(1, Math.floor(w * dpr));
+            const ph = Math.max(1, Math.floor(h * dpr));
+            if (playerPageWaveCanvas.width !== pw || playerPageWaveCanvas.height !== ph) {
+                playerPageWaveCanvas.width = pw;
+                playerPageWaveCanvas.height = ph;
             }
-            if (playerPageVizRaf) return;
+            playerPageWaveCtx2d.setTransform(dpr, 0, 0, dpr, 0, 0);
+            return true;
+        }
 
+        function startPlayerPageWave() {
+            if (!ensurePlayerPageWaveCanvas()) return;
+            if (playerPageWaveRaf) return;
+
+            const { r, g, b } = getMmPrimaryRgb();
+            const ctx = playerPageWaveCtx2d;
             const render = () => {
-                playerPageVizRaf = 0;
-                const isPlaying = !audio.paused && !audio.ended;
-                
-                if (!isPlaying) {
-                    stopPlayerPageVisualizer();
-                    return;
-                }
+                playerPageWaveRaf = 0;
+                if (!ctx || !playerPageWaveCanvas) return;
 
-                let hasData = false;
-                if (playerPageVizAnalyser && playerPageVizData) {
-                    playerPageVizAnalyser.getByteFrequencyData(playerPageVizData);
-                    let sum = 0;
-                    for (let i = 0; i < playerPageVizData.length; i++) sum += playerPageVizData[i];
-                    if (sum > 0) hasData = true;
-                }
+                if (!ensurePlayerPageWaveCanvas()) return;
+                const w = Math.max(1, playerPageWaveCanvas.clientWidth || 1);
+                const h = Math.max(1, playerPageWaveCanvas.clientHeight || 1);
+                const cx = w / 2;
+                const cy = h / 2;
 
-                // Simulation mode for Android or when silence is detected but playing
-                // This ensures the visualizer is always "cool" and moving
-                const useSimulated = (!hasData || (isAndroidApp && !hasData));
+                const playing = !audio.paused && !!audio.src && !audio.ended;
+                const t = (performance.now() || 0) / 1000;
+                const ct = (() => { try { return Number(audio.currentTime || 0); } catch { return 0; } })();
+                const speed = playing ? 1 : 0.45;
+                const phase = (t * 2.2 * speed) + (ct * 0.35);
+                const amp = (playing ? 1 : 0.55) * (0.35 + 0.25 * Math.sin(phase * 1.2) + 0.15 * Math.sin(phase * 2.1));
+                const a = Math.max(0.12, Math.min(1, amp));
 
-                const ctx = playerPageVizCanvasCtx;
-                const w = playerPageVizCanvas.width;
-                const h = playerPageVizCanvas.height;
                 ctx.clearRect(0, 0, w, h);
+                ctx.globalCompositeOperation = 'lighter';
 
-                const bars = 20; 
-                const center = w / 2;
-                const barWidth = (w / 2) / (bars + 2);
-                const gap = barWidth * 0.3;
-                const actualBarW = barWidth - gap;
+                const grad = ctx.createLinearGradient(0, 0, w, 0);
+                grad.addColorStop(0, `rgba(${r},${g},${b},${0.10 + a * 0.15})`);
+                grad.addColorStop(0.5, `rgba(${Math.min(255, r + 60)},${Math.min(255, g + 40)},${Math.min(255, b + 20)},${0.18 + a * 0.22})`);
+                grad.addColorStop(1, `rgba(${r},${g},${b},${0.10 + a * 0.15})`);
 
-                // Gradient: Purple -> Pink -> Cyan
-                const gradient = ctx.createLinearGradient(0, h, 0, 0);
-                gradient.addColorStop(0, '#a855f7'); 
-                gradient.addColorStop(0.5, '#ec4899'); 
-                gradient.addColorStop(1, '#22d3ee'); 
-                ctx.fillStyle = gradient;
-
-                const time = Date.now() / 250;
-
-                for (let i = 0; i < bars; i++) {
-                    let magnitude = 0;
-                    if (useSimulated) {
-                        const offset = i * 0.3;
-                        // Combine sine waves for organic look
-                        const noise = (Math.sin(time + offset) * 0.5 + 0.5) * 0.7 + (Math.cos(time * 0.8 - offset) * 0.5 + 0.5) * 0.3;
-                        magnitude = noise * 255;
-                        // Taper ends
-                        if (i > bars * 0.6) magnitude *= 1 - ((i - bars * 0.6) / (bars * 0.4));
-                    } else {
-                        // Use real data, mapping low frequencies to center
-                        const binCount = playerPageVizData.length;
-                        // Focus on first 60% of bins (bass/mid)
-                        const usefulBins = Math.floor(binCount * 0.6);
-                        const binsPerBar = Math.floor(usefulBins / bars);
-                        let sum = 0;
-                        for (let j = 0; j < binsPerBar; j++) {
-                            sum += playerPageVizData[i * binsPerBar + j] || 0;
-                        }
-                        magnitude = sum / binsPerBar;
-                        // Boost high frequencies a bit
-                        magnitude = magnitude * (1 + i * 0.05); 
+                const baseAmp = (h * 0.38) * a;
+                const step = 2;
+                const drawWave = (lw, alpha, blur, f1, f2, s1, s2, yOff = 0) => {
+                    ctx.lineWidth = lw;
+                    ctx.strokeStyle = grad;
+                    ctx.globalAlpha = alpha;
+                    ctx.shadowColor = `rgba(${r},${g},${b},${0.25 + a * 0.35})`;
+                    ctx.shadowBlur = blur;
+                    ctx.beginPath();
+                    for (let x = 0; x <= w; x += step) {
+                        const p = x / w;
+                        const env = Math.sin(Math.PI * p);
+                        const y =
+                            cy + yOff
+                            + (Math.sin((p * f1) + phase * s1) + 0.55 * Math.sin((p * f2) - phase * s2)) * baseAmp * env;
+                        if (x === 0) ctx.moveTo(x, y);
+                        else ctx.lineTo(x, y);
                     }
+                    ctx.stroke();
+                };
 
-                    const percent = Math.min(1, magnitude / 255);
-                    // Non-linear scaling for better visuals
-                    const eased = percent * percent * 0.4 + percent * 0.6; 
-                    const barH = Math.max(4 * dpr, eased * h * 0.85);
+                drawWave(7, 0.08 + a * 0.07, 18, 10.5, 25.0, 1.15, 0.85, 0);
+                drawWave(4, 0.16 + a * 0.10, 10, 12.0, 28.0, 1.25, 0.92, 0);
+                drawWave(2, 0.24 + a * 0.12, 6, 14.0, 31.0, 1.35, 1.00, 0);
 
-                    // Symmetrical drawing
-                    const r = actualBarW / 2;
-                    
-                    // Right side
-                    const xRight = center + i * barWidth + gap;
+                const spawnRate = playing ? (0.6 + a * 2.4) : 0.35;
+                if (Math.random() < spawnRate * 0.06 && playerPageWaveParticles.length < 28) {
+                    const px = Math.random() * w;
+                    const py = cy + (Math.random() - 0.5) * baseAmp * 0.9;
+                    const dir = Math.random() < 0.5 ? -1 : 1;
+                    playerPageWaveParticles.push({
+                        x: px,
+                        y: py,
+                        vx: dir * (22 + Math.random() * 46),
+                        vy: (Math.random() - 0.5) * (22 + Math.random() * 40),
+                        life: 0.55 + Math.random() * 0.55,
+                        age: 0,
+                        s: 1 + Math.random() * 2.5,
+                    });
+                }
+
+                const dt = 1 / 60;
+                ctx.shadowBlur = 0;
+                for (let i = playerPageWaveParticles.length - 1; i >= 0; i--) {
+                    const p = playerPageWaveParticles[i];
+                    p.age += dt;
+                    if (p.age >= p.life) {
+                        playerPageWaveParticles.splice(i, 1);
+                        continue;
+                    }
+                    p.x += p.vx * dt;
+                    p.y += p.vy * dt;
+                    p.vy *= 0.985;
+                    const k = 1 - (p.age / p.life);
+                    const pr = Math.min(255, r + 90);
+                    const pg = Math.min(255, g + 70);
+                    const pb = Math.min(255, b + 35);
+                    ctx.globalAlpha = Math.max(0, Math.min(1, k)) * (0.08 + a * 0.10);
+                    ctx.fillStyle = `rgba(${pr},${pg},${pb},1)`;
                     ctx.beginPath();
-                    if (ctx.roundRect) ctx.roundRect(xRight, (h - barH) / 2, actualBarW, barH, 50);
-                    else ctx.rect(xRight, (h - barH) / 2, actualBarW, barH);
-                    ctx.fill();
-
-                    // Left side
-                    const xLeft = center - (i + 1) * barWidth - gap;
-                    ctx.beginPath();
-                    if (ctx.roundRect) ctx.roundRect(xLeft, (h - barH) / 2, actualBarW, barH, 50);
-                    else ctx.rect(xLeft, (h - barH) / 2, actualBarW, barH);
+                    ctx.arc(p.x, p.y, p.s * (0.6 + 0.9 * k), 0, Math.PI * 2);
                     ctx.fill();
                 }
 
-                playerPageVizRaf = requestAnimationFrame(render);
+                ctx.globalAlpha = 1;
+                ctx.globalCompositeOperation = 'source-over';
+
+                if (playing) playerPageWaveRaf = requestAnimationFrame(render);
+                else stopPlayerPageWave();
             };
 
-            playerPageVizRaf = requestAnimationFrame(render);
+            playerPageWaveRaf = requestAnimationFrame(render);
         }
 
         function updatePlayerPageDots() {
