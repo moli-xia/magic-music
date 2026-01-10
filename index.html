@@ -5,22 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>魔力音乐</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%2064%2064%27%3E%3Cdefs%3E%3ClinearGradient%20id%3D%27g%27%20x1%3D%270%27%20y1%3D%270%27%20x2%3D%271%27%20y2%3D%271%27%3E%3Cstop%20stop-color%3D%27%237B1FA2%27/%3E%3Cstop%20offset%3D%271%27%20stop-color%3D%27%23E040FB%27/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect%20width%3D%2764%27%20height%3D%2764%27%20rx%3D%2716%27%20fill%3D%27url(%23g)%27/%3E%3Cpath%20d%3D%27M16%2048V20l16%2012%2016-12v28%27%20stroke%3D%27white%27%20stroke-width%3D%276%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%20fill%3D%27none%27/%3E%3C/svg%3E">
-    <script>
-        (function () {
-            try {
-                if (!window.MagicMusicAndroid) return;
-                const originalWarn = console && console.warn ? console.warn.bind(console) : null;
-                if (!originalWarn) return;
-                console.warn = function () {
-                    try {
-                        const msg = String(arguments && arguments.length ? arguments[0] : '');
-                        if (msg && msg.indexOf('cdn.tailwindcss.com') >= 0) return;
-                    } catch {}
-                    return originalWarn.apply(console, arguments);
-                };
-            } catch {}
-        })();
-    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
@@ -1491,57 +1475,12 @@
         const isAndroidApp = !!(window.MagicMusicAndroid);
         let mmLastAudioErrorAt = 0;
         let mmLastAlertAt = 0;
-        let mmLastLogAt = 0;
-        let mmLastPlayRequestAt = 0;
-        let mmLastUserPauseAt = 0;
-        const mmNative = (() => {
-            try {
-                return window.MagicMusicAndroid || null;
-            } catch {
-                return null;
-            }
-        })();
-        function mmNativeReport(text) {
-            if (!isAndroidApp) return false;
-            const raw = String(text || '').trim();
-            if (!raw) return false;
-            try {
-                if (mmNative && typeof mmNative.reportError === 'function') {
-                    mmNative.reportError(raw);
-                    return true;
-                }
-            } catch {}
-            try {
-                if (mmNative && typeof mmNative.toast === 'function') {
-                    mmNative.toast(raw);
-                    return true;
-                }
-            } catch {}
-            return false;
-        }
         function mmAlert(text) {
             if (!isAndroidApp) return;
             const now = Date.now();
             if (now - mmLastAlertAt < 1200) return;
             mmLastAlertAt = now;
-            const msg = String(text || '发生错误');
-            if (mmNativeReport(msg)) return;
-            alert(msg);
-        }
-        function mmLog(text) {
-            if (!isAndroidApp) return;
-            const now = Date.now();
-            if (now - mmLastLogAt < 900) return;
-            mmLastLogAt = now;
-            mmNativeReport(`[MM] ${String(text || '').trim()}`);
-        }
-        function mmUserAlert(text) {
-            const msg = String(text || '发生错误');
-            if (isAndroidApp) {
-                mmAlert(msg);
-                return;
-            }
-            alert(msg);
+            alert(String(text || '发生错误'));
         }
         function mmDescribeError(err) {
             try {
@@ -1555,46 +1494,11 @@
                 return '';
             }
         }
-        function mmPause(context) {
-            try {
-                mmLastUserPauseAt = Date.now();
-                if (isAndroidApp) mmLog(`pause() 请求 ${context ? `(${String(context)})` : ''}`);
-            } catch {}
-            try {
-                audio.pause();
-            } catch {}
-        }
         async function mmPlay(context) {
             try {
-                if (isAndroidApp) {
-                    unlockAudioPlayback();
-                    try {
-                        if (window.MagicMusicAndroid && typeof window.MagicMusicAndroid.setPlaying === 'function') {
-                            window.MagicMusicAndroid.setPlaying('1');
-                        }
-                    } catch {}
-                    mmLastPlayRequestAt = Date.now();
-                    const src = (() => {
-                        try { return String(audio.currentSrc || audio.src || ''); } catch { return ''; }
-                    })();
-                    const rs = (() => {
-                        try { return String(audio.readyState); } catch { return ''; }
-                    })();
-                    const ns = (() => {
-                        try { return String(audio.networkState); } catch { return ''; }
-                    })();
-                    mmLog(`play() 请求 ${context ? `(${String(context)})` : ''} src=${src || '-'} rs=${rs} ns=${ns}`);
-                }
                 const p = audio.play();
                 if (p && typeof p.then === 'function') await p;
             } catch (err) {
-                if (isAndroidApp) {
-                    try {
-                        if (window.MagicMusicAndroid && typeof window.MagicMusicAndroid.setPlaying === 'function') {
-                            window.MagicMusicAndroid.setPlaying('0');
-                        }
-                    } catch {}
-                }
                 const ctx = String(context || '').trim();
                 const detail = mmDescribeError(err);
                 const prefix = ctx ? `音频播放失败(${ctx})` : '音频播放失败';
@@ -1614,23 +1518,6 @@
                 throw new Error(`${detail ? `${prefix}：${detail}` : prefix}\n${extra}`);
             }
         }
-        if (isAndroidApp) {
-            try {
-                window.addEventListener('error', (e) => {
-                    const msg = e && e.message ? String(e.message) : 'JS error';
-                    const src = e && e.filename ? String(e.filename) : '';
-                    const line = e && typeof e.lineno === 'number' ? String(e.lineno) : '';
-                    const col = e && typeof e.colno === 'number' ? String(e.colno) : '';
-                    mmNativeReport(`[JS Error] ${msg} @ ${src}:${line}:${col}`);
-                });
-            } catch {}
-            try {
-                window.addEventListener('unhandledrejection', (e) => {
-                    const reason = e && e.reason ? mmDescribeError(e.reason) : '';
-                    mmNativeReport(`[Promise] ${reason || 'unhandledrejection'}`);
-                });
-            } catch {}
-        }
         audio.addEventListener('error', () => {
             if (!isAndroidApp) return;
             const now = Date.now();
@@ -1638,16 +1525,7 @@
             mmLastAudioErrorAt = now;
             const err = audio.error;
             const code = err && typeof err.code === 'number' ? err.code : 0;
-            const src = (() => {
-                try { return String(audio.currentSrc || audio.src || ''); } catch { return ''; }
-            })();
-            const rs = (() => {
-                try { return String(audio.readyState); } catch { return ''; }
-            })();
-            const ns = (() => {
-                try { return String(audio.networkState); } catch { return ''; }
-            })();
-            mmAlert(`音频加载失败(code=${code})\nsrc=${src || '-'} rs=${rs} ns=${ns}`);
+            alert(`音频加载失败(code=${code})`);
         });
         let audioUnlocked = false;
         let audioUnlocking = false;
@@ -2021,7 +1899,7 @@
                 await playTrack(track);
             } catch (err) {
                 const msg = err instanceof Error && err.message ? err.message : '后端未启动或资源不可用';
-                mmUserAlert(`播放失败：${msg}`);
+                alert(`播放失败：${msg}`);
             }
         }
 
@@ -2129,7 +2007,7 @@
                     if (queueKey) activeQueueKey = String(queueKey);
                     try {
                         if (audio.paused) await mmPlay('列表按钮');
-                        else mmPause('列表按钮');
+                        else audio.pause();
                     } catch (err) {
                         mmAlert(err instanceof Error ? err.message : '音频播放失败');
                     }
@@ -2142,7 +2020,7 @@
                     await playTrack(track);
                 } catch (err) {
                     const msg = err instanceof Error && err.message ? err.message : '后端未启动或资源不可用';
-                    mmUserAlert(`播放失败：${msg}`);
+                    alert(`播放失败：${msg}`);
                 } finally {
                     updateInlinePlayButtonsUI();
                 }
@@ -2442,6 +2320,10 @@
             if (playerPageVinyl) {
                 playerPageVinyl.classList.toggle('is-playing', !audio.paused && !!audio.src);
             }
+            if (isAndroidApp) {
+                stopPlayerPageVisualizer();
+                return;
+            }
             if (!audio.paused && !!audio.src) startPlayerPageVisualizer();
             else stopPlayerPageVisualizer();
         }
@@ -2480,12 +2362,6 @@
 
         function ensurePlayerPageVisualizerGraph() {
             if (!playerPageVisualizerBars.length) return false;
-            if (playerPageVizCtx && playerPageVizCtx.state === 'closed') {
-                playerPageVizCtx = null;
-                playerPageVizAnalyser = null;
-                playerPageVizSource = null;
-                playerPageVizData = null;
-            }
             if (playerPageVizCtx && playerPageVizAnalyser && playerPageVizSource && playerPageVizData) return true;
             const Ctx = window.AudioContext || window.webkitAudioContext;
             if (!Ctx) return false;
@@ -2555,15 +2431,6 @@
 
             playerPageVizRaf = requestAnimationFrame(render);
         }
-
-        document.addEventListener('visibilitychange', () => {
-            if (document.visibilityState !== 'visible') return;
-            try { unlockAudioPlayback(); } catch {}
-            try {
-                if (!audio.paused && !!audio.src) startPlayerPageVisualizer();
-                else stopPlayerPageVisualizer();
-            } catch {}
-        }, { passive: true });
 
         function updatePlayerPageDots() {
             if (!playerPageDot0 || !playerPageDot1) return;
@@ -3560,7 +3427,7 @@
                         await playTrack(track);
                     } catch (err) {
                         const msg = err instanceof Error && err.message ? err.message : '后端未启动或资源不可用';
-                        mmUserAlert(`播放失败：${msg}`);
+                        alert(`播放失败：${msg}`);
                     }
                 });
                 searchResultsList.appendChild(row);
@@ -3773,7 +3640,7 @@
                     if (same && audio.src) {
                         activeQueueKey = 'home:guess';
                         if (audio.paused) await mmPlay('首页猜你喜欢');
-                        else mmPause('首页猜你喜欢');
+                        else audio.pause();
                         updateInlinePlayButtonsUI();
                         return;
                     }
@@ -3797,7 +3664,7 @@
                     if (same && audio.src) {
                         activeQueueKey = 'home:daily';
                         if (audio.paused) await mmPlay('首页每日推荐');
-                        else mmPause('首页每日推荐');
+                        else audio.pause();
                         updateInlinePlayButtonsUI();
                         return;
                     }
@@ -5919,7 +5786,7 @@
                 try {
                     if (audio.src) {
                         if (audio.paused) await mmPlay('底栏播放按钮');
-                        else mmPause('底栏播放按钮');
+                        else audio.pause();
                         return;
                     }
                     if (currentTrack) {
@@ -5930,7 +5797,7 @@
                     if (fallback) doSearch(fallback);
                 } catch (err) {
                     const msg = err instanceof Error && err.message ? err.message : '后端未启动或资源不可用';
-                    mmUserAlert(`播放失败：${msg}`);
+                    alert(`播放失败：${msg}`);
                 } finally {
                     setPlayIcon(!!audio.src && !audio.paused);
                     updatePlayerPagePlayUI();
@@ -5995,7 +5862,7 @@
                 try {
                     if (audio.src) {
                         if (audio.paused) await mmPlay('播放器页播放按钮');
-                        else mmPause('播放器页播放按钮');
+                        else audio.pause();
                         return;
                     }
                     if (currentTrack) {
@@ -6122,39 +5989,11 @@
             setPlayIcon(true);
             updateInlinePlayButtonsUI();
             notifyNativePlaying(true);
-            if (isAndroidApp) {
-                const src = (() => { try { return String(audio.currentSrc || audio.src || ''); } catch { return ''; } })();
-                mmLog(`audio play src=${src || '-'}`);
-            }
         });
         audio.addEventListener('pause', () => {
             setPlayIcon(false);
             updateInlinePlayButtonsUI();
             notifyNativePlaying(false);
-            if (isAndroidApp) {
-                const now = Date.now();
-                const recent = mmLastPlayRequestAt && now - mmLastPlayRequestAt < 1500;
-                if (recent) {
-                    const userPause = mmLastUserPauseAt && now - mmLastUserPauseAt < 1200;
-                    const nativePauseAt = (() => {
-                        try { return Number(window.__mmNativePauseAt || 0); } catch { return 0; }
-                    })();
-                    const nativePause = nativePauseAt && now - nativePauseAt < 2500;
-                    const hidden = (() => {
-                        try { return document.hidden || document.visibilityState !== 'visible'; } catch { return false; }
-                    })();
-                    if (userPause || nativePause || hidden) {
-                        try { window.__mmNativePauseAt = 0; } catch {}
-                        try { window.__mmNativePauseReason = ''; } catch {}
-                        return;
-                    }
-                    const src = (() => { try { return String(audio.currentSrc || audio.src || ''); } catch { return ''; } })();
-                    const code = (() => { try { return String(audio.error && typeof audio.error.code === 'number' ? audio.error.code : ''); } catch { return ''; } })();
-                    const rs = (() => { try { return String(audio.readyState); } catch { return ''; } })();
-                    const ns = (() => { try { return String(audio.networkState); } catch { return ''; } })();
-                    mmNativeReport(`[MM] play后立即pause src=${src || '-'} rs=${rs} ns=${ns} err=${code || '-'}`);
-                }
-            }
         });
         audio.addEventListener('play', updatePlayerPagePlayUI);
         audio.addEventListener('pause', updatePlayerPagePlayUI);

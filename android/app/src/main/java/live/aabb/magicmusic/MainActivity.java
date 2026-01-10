@@ -14,7 +14,6 @@ import android.os.Environment;
 import android.os.PowerManager;
 import android.view.View;
 import android.view.WindowInsetsController;
-import android.webkit.ConsoleMessage;
 import android.webkit.CookieManager;
 import android.webkit.JavascriptInterface;
 import android.webkit.URLUtil;
@@ -23,7 +22,6 @@ import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import android.widget.Toast;
 
 import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AppCompatActivity;
@@ -37,8 +35,8 @@ public class MainActivity extends AppCompatActivity {
   private PowerManager.WakeLock wakeLock;
   private boolean playbackActive = false;
   private boolean hasAudioFocus = false;
-  private boolean focusEverGained = false;
-  private long lastFocusRequestAt = 0L;
+  private boolean everHadAudioFocusForThisPlayback = false;
+  private long playbackActivatedAtMs = 0L;
 
   @SuppressLint("SetJavaScriptEnabled")
   @Override
@@ -53,7 +51,6 @@ public class MainActivity extends AppCompatActivity {
     settings.setJavaScriptEnabled(true);
     settings.setDomStorageEnabled(true);
     settings.setDatabaseEnabled(true);
-    settings.setCacheMode(WebSettings.LOAD_NO_CACHE);
     settings.setMediaPlaybackRequiresUserGesture(false);
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
       settings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
@@ -70,30 +67,12 @@ public class MainActivity extends AppCompatActivity {
     cookieManager.setAcceptCookie(true);
     cookieManager.setAcceptThirdPartyCookies(webView, true);
 
-    webView.setWebChromeClient(
-        new WebChromeClient() {
-          @Override
-          public void onPermissionRequest(final android.webkit.PermissionRequest request) {
+    webView.setWebChromeClient(new WebChromeClient() {
+        @Override
+        public void onPermissionRequest(final android.webkit.PermissionRequest request) {
             request.grant(request.getResources());
-          }
-
-          @Override
-          public boolean onConsoleMessage(ConsoleMessage consoleMessage) {
-            if (consoleMessage != null) {
-              String msg = consoleMessage.message();
-              if (msg != null) {
-                String text = msg.trim();
-                if (!text.isEmpty()) {
-                  boolean shouldToast = text.startsWith("[JS Error]") || text.startsWith("[Promise]");
-                  if (shouldToast) {
-                    Toast.makeText(MainActivity.this, text, Toast.LENGTH_LONG).show();
-                  }
-                }
-              }
-            }
-            return super.onConsoleMessage(consoleMessage);
-          }
-        });
+        }
+    });
     webView.setDownloadListener(
         (url, userAgent, contentDisposition, mimeType, contentLength) -> {
           try {
@@ -148,11 +127,7 @@ public class MainActivity extends AppCompatActivity {
     if (savedInstanceState != null) {
       webView.restoreState(savedInstanceState);
     } else {
-      webView.clearCache(true);
-      webView.clearHistory();
-      String url = START_URL;
-      String joiner = url.contains("?") ? "&" : "?";
-      webView.loadUrl(url + joiner + "apk_ts=" + System.currentTimeMillis());
+      webView.loadUrl(START_URL);
     }
 
     getOnBackPressedDispatcher()
@@ -192,22 +167,12 @@ public class MainActivity extends AppCompatActivity {
 
   @Override
   protected void onPause() {
-    if (webView != null) {
-      webView.onPause();
-    }
-    if (playbackActive) {
-      releaseWakeLock();
-      abandonAudioFocus();
-    }
     super.onPause();
   }
 
   @Override
   protected void onResume() {
     super.onResume();
-    if (webView != null) {
-      webView.onResume();
-    }
     if (playbackActive) {
       requestAudioFocus();
       acquireWakeLock();
@@ -238,23 +203,19 @@ public class MainActivity extends AppCompatActivity {
         focusChange -> {
           if (focusChange == AudioManager.AUDIOFOCUS_GAIN) {
             hasAudioFocus = true;
-            focusEverGained = true;
+            everHadAudioFocusForThisPlayback = true;
             return;
           }
-          if (focusChange == AudioManager.AUDIOFOCUS_LOSS
-              || focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT
-              || focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK) {
+          if (focusChange == AudioManager.AUDIOFOCUS_LOSS) {
             hasAudioFocus = false;
             if (!playbackActive) return;
-            long now = System.currentTimeMillis();
-            if (!focusEverGained) return;
-            if (now - lastFocusRequestAt < 1800L) return;
+            long now = android.os.SystemClock.elapsedRealtime();
+            if (!everHadAudioFocusForThisPlayback && now - playbackActivatedAtMs < 2500L) return;
             runOnUiThread(
                 () -> {
                   if (webView == null) return;
                   webView.evaluateJavascript(
-                      "try{window.__mmNativePauseAt=Date.now();window.__mmNativePauseReason='AUDIOFOCUS_LOSS';"
-                          + "if(window.__mmAudio && !window.__mmAudio.paused){window.__mmAudio.pause();}}catch(e){}",
+                      "try{if(window.__mmAudio && !window.__mmAudio.paused){window.__mmAudio.pause();}}catch(e){}",
                       null);
                 });
           }
@@ -270,7 +231,8 @@ public class MainActivity extends AppCompatActivity {
   private void setPlaybackActive(boolean active) {
     playbackActive = active;
     if (active) {
-      focusEverGained = false;
+      playbackActivatedAtMs = android.os.SystemClock.elapsedRealtime();
+      everHadAudioFocusForThisPlayback = false;
       requestAudioFocus();
       acquireWakeLock();
     } else {
@@ -281,7 +243,6 @@ public class MainActivity extends AppCompatActivity {
 
   private void requestAudioFocus() {
     if (audioManager == null) return;
-    lastFocusRequestAt = System.currentTimeMillis();
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
       AudioAttributes attrs =
           new AudioAttributes.Builder()
@@ -435,20 +396,6 @@ public class MainActivity extends AppCompatActivity {
             } catch (Exception ignored) {
             }
           });
-    }
-
-    @JavascriptInterface
-    public void toast(String text) {
-      final String msg = text == null ? "" : text.trim();
-      if (msg.isEmpty()) return;
-      runOnUiThread(() -> Toast.makeText(MainActivity.this, msg, Toast.LENGTH_LONG).show());
-    }
-
-    @JavascriptInterface
-    public void reportError(String text) {
-      final String msg = text == null ? "" : text.trim();
-      if (msg.isEmpty()) return;
-      runOnUiThread(() -> Toast.makeText(MainActivity.this, msg, Toast.LENGTH_LONG).show());
     }
   }
 }
